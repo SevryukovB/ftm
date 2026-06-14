@@ -10,6 +10,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { forkJoin } from 'rxjs';
+import { AuthService } from '../../core/auth.service';
 import { EarningsService } from '../../core/earnings.service';
 import { PayoutService } from '../../core/payout.service';
 import { TaskService } from '../../core/task.service';
@@ -55,7 +56,9 @@ interface PayoutHistoryRow {
             <th class="currency-col">USD</th>
             <th class="currency-col">UAH</th>
             <th class="activity-col">{{ 'payoutHistory.activity' | translate }}</th>
-            <th class="action-col"></th>
+            @if (auth.isAdmin()) {
+              <th class="action-col"></th>
+            }
           </tr>
         </ng-template>
         <ng-template #body let-row>
@@ -83,18 +86,20 @@ interface PayoutHistoryRow {
               <div class="metric-row"><span>{{ 'payoutHistory.verifiedTasksShort' | translate }}</span><strong>{{ row.stats.USD.verifiedTasksCount + row.stats.UAH.verifiedTasksCount }}</strong></div>
               <div class="metric-row"><span>{{ 'payoutHistory.payoutsCount' | translate }}</span><strong>{{ row.payoutsCount }}</strong></div>
             </td>
-            <td>
-              <p-button
-                icon="pi pi-wallet"
-                size="small"
-                [rounded]="true"
-                [pTooltip]="'payoutHistory.payout.action' | translate"
-                (onClick)="openPayout(row)" />
-            </td>
+            @if (auth.isAdmin()) {
+              <td>
+                <p-button
+                  icon="pi pi-wallet"
+                  size="small"
+                  [rounded]="true"
+                  [pTooltip]="'payoutHistory.payout.action' | translate"
+                  (onClick)="openPayout(row)" />
+              </td>
+            }
           </tr>
           @if (expandedUserId() === row.userId) {
             <tr>
-              <td colspan="6" class="history-cell">
+              <td [attr.colspan]="auth.isAdmin() ? 6 : 5" class="history-cell">
                 <div class="history-panel">
                   @if (historyLoading()) {
                     <div class="muted">{{ 'payoutHistory.history.loading' | translate }}</div>
@@ -132,7 +137,7 @@ interface PayoutHistoryRow {
           }
         </ng-template>
         <ng-template #emptymessage>
-          <tr><td colspan="6" class="empty">{{ 'payoutHistory.empty' | translate }}</td></tr>
+          <tr><td [attr.colspan]="auth.isAdmin() ? 6 : 5" class="empty">{{ 'payoutHistory.empty' | translate }}</td></tr>
         </ng-template>
       </p-table>
     </div>
@@ -211,6 +216,7 @@ interface PayoutHistoryRow {
   `]
 })
 export class PayoutHistoryComponent implements OnInit {
+  readonly auth = inject(AuthService);
   private readonly earnings = inject(EarningsService);
   private readonly payouts = inject(PayoutService);
   private readonly tasks = inject(TaskService);
@@ -257,21 +263,77 @@ export class PayoutHistoryComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.tasks.workers().subscribe({
-      next: workers => this.workers.set(workers),
-      error: () => {}
-    });
+    if (this.auth.isAdmin()) {
+      this.tasks.workers().subscribe({
+        next: workers => this.workers.set(workers),
+        error: () => {}
+      });
+    } else if (this.auth.user()) {
+      this.workers.set([this.auth.user()!]);
+    }
+
     this.load();
   }
 
   load(): void {
     this.loading.set(true);
+
+    if (!this.auth.isAdmin()) {
+      this.loadWorker();
+      return;
+    }
+
     forkJoin({
       stats: this.earnings.statistics(this.from, this.to),
       payouts: this.payouts.list()
     }).subscribe({
       next: ({ stats, payouts }) => {
         this.stats.set(stats);
+        this.allPayouts.set(payouts);
+        if (this.expandedUserId()) {
+          this.history.set(this.payoutsForUser(this.expandedUserId()!));
+        }
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.messages.add({
+          severity: 'error',
+          summary: this.translate.instant('common.error'),
+          detail: this.translate.instant('payoutHistory.loadFailed')
+        });
+      }
+    });
+  }
+
+  private loadWorker(): void {
+    forkJoin({
+      tasks: this.tasks.list(),
+      balance: this.earnings.getMyBalance(),
+      payouts: this.payouts.list()
+    }).subscribe({
+      next: ({ tasks, balance, payouts }) => {
+        const user = this.auth.user();
+        if (!user) {
+          this.stats.set([]);
+          this.allPayouts.set([]);
+          this.loading.set(false);
+          return;
+        }
+
+        const verifiedTasks = tasks.filter(task => task.status === 'Verified');
+        this.stats.set((['USD', 'UAH'] as Currency[]).map(currency => {
+          const balanceItem = balance.balances.find(item => item.currency === currency);
+          const currencyTasks = verifiedTasks.filter(task => task.rewardCurrency === currency);
+          return {
+            userId: user.id,
+            currency,
+            earnedAmountMinor: currencyTasks.reduce((sum, task) => sum + (task.rewardAmountMinor ?? 0), 0),
+            paidAmountMinor: balanceItem?.paidAmountMinor ?? 0,
+            availableAmountMinor: balanceItem?.availableAmountMinor ?? 0,
+            verifiedTasksCount: currencyTasks.length
+          };
+        }));
         this.allPayouts.set(payouts);
         if (this.expandedUserId()) {
           this.history.set(this.payoutsForUser(this.expandedUserId()!));

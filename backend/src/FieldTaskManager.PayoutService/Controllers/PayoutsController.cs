@@ -18,7 +18,6 @@ public sealed class PayoutsController(
     ILogger<PayoutsController> logger) : ControllerBase
 {
     [HttpGet]
-    [Authorize(Roles = "OrgAdmin")]
     public async Task<ActionResult<IReadOnlyList<PayoutDto>>> List(
         [FromQuery] Guid? userId,
         CancellationToken ct)
@@ -29,9 +28,16 @@ public sealed class PayoutsController(
             .Include(p => p.Items)
             .Where(p => p.OrganizationId == organizationId);
 
-        if (userId is not null)
+        if (User.IsInRole("OrgAdmin"))
         {
-            query = query.Where(p => p.UserId == userId);
+            if (userId is not null)
+            {
+                query = query.Where(p => p.UserId == userId);
+            }
+        }
+        else
+        {
+            query = query.Where(p => p.UserId == User.GetUserId());
         }
 
         var payouts = await query

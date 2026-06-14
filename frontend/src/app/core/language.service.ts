@@ -1,16 +1,17 @@
-import { Injectable, computed, inject } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 
 export type AppLanguage = 'en' | 'ua';
 
-const LANGUAGE_KEY = 'ftm_language';
+export const LANGUAGE_KEY = 'ftm_language';
 const LANGUAGES: AppLanguage[] = ['en', 'ua'];
 
 @Injectable({ providedIn: 'root' })
 export class LanguageService {
   private readonly translate = inject(TranslateService);
+  private readonly currentSignal = signal<AppLanguage>(readInitialLanguage(this.translate));
 
-  readonly current = computed(() => (this.translate.currentLang() as AppLanguage | null) ?? 'en');
+  readonly current = computed(() => this.currentSignal());
   readonly options = [
     { label: 'EN', value: 'en' as AppLanguage },
     { label: 'UA', value: 'ua' as AppLanguage }
@@ -19,23 +20,24 @@ export class LanguageService {
   constructor() {
     this.translate.addLangs(LANGUAGES);
     this.translate.setFallbackLang('en');
-    this.use(this.readInitialLanguage());
+    this.use(this.currentSignal());
   }
 
   use(language: AppLanguage): void {
     localStorage.setItem(LANGUAGE_KEY, language);
+    this.currentSignal.set(language);
     this.translate.use(language);
   }
+}
 
-  private readInitialLanguage(): AppLanguage {
-    const stored = localStorage.getItem(LANGUAGE_KEY);
-    if (this.isLanguage(stored)) return stored;
+export function readInitialLanguage(translate?: TranslateService): AppLanguage {
+  const stored = localStorage.getItem(LANGUAGE_KEY);
+  if (isLanguage(stored)) return stored;
 
-    const browser = this.translate.getBrowserLang();
-    return browser === 'uk' || browser === 'ua' ? 'ua' : 'en';
-  }
+  const browser = translate?.getBrowserLang() ?? navigator.language.split('-')[0];
+  return browser === 'uk' || browser === 'ua' ? 'ua' : 'en';
+}
 
-  private isLanguage(value: string | null): value is AppLanguage {
-    return value === 'en' || value === 'ua';
-  }
+function isLanguage(value: string | null): value is AppLanguage {
+  return value === 'en' || value === 'ua';
 }

@@ -47,6 +47,8 @@ export const routes: Routes = [
       { path: 'tasks', component: TaskListComponent },
       { path: 'tasks/:id', component: TaskDetailsComponent },
       { path: 'map', component: MapViewComponent },
+      { path: 'statistics', component: StatisticsComponent },
+      { path: 'payout-history', component: PayoutHistoryComponent },
       { path: 'notifications', component: NotificationsComponent },
       { path: 'settings', component: SettingsComponent }
     ]

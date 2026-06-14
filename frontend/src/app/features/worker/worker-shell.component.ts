@@ -43,6 +43,14 @@ import { BalanceSummaryComponent } from '../../shared/balance-summary.component'
               <i class="pi pi-map"></i>
               <span>{{ 'nav.map' | translate }}</span>
             </a>
+            <a routerLink="/statistics" routerLinkActive="active">
+              <i class="pi pi-chart-line"></i>
+              <span>{{ 'nav.statistics' | translate }}</span>
+            </a>
+            <a routerLink="/payout-history" routerLinkActive="active">
+              <i class="pi pi-wallet"></i>
+              <span>{{ 'nav.payoutHistory' | translate }}</span>
+            </a>
             <a routerLink="/notifications" routerLinkActive="active">
               <i class="pi pi-bell"></i>
               <span>{{ 'nav.notifications' | translate }}</span>

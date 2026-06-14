@@ -10,6 +10,7 @@ import { provideTranslateService } from '@ngx-translate/core';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './core/auth.interceptor';
+import { readInitialLanguage } from './core/language.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -24,7 +25,7 @@ export const appConfig: ApplicationConfig = {
       }
     }),
     provideTranslateService({
-      lang: 'en',
+      lang: readInitialLanguage(),
       fallbackLang: 'en',
       loader: provideTranslateHttpLoader({
         prefix: '/assets/i18n/',

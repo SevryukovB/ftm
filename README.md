@@ -1,77 +1,51 @@
 # Field Task Manager
 
-A web system for managing field tasks. An **Admin** creates tasks with a location on a map and assigns them to workers. **Workers** see only their own tasks, change task status, and add comments. The admin verifies completed tasks or returns them to work.
-
-## Features
-
-- Registration / login (JWT-based authentication)
-- Admin account is created automatically on first run; self-registered users get the **Worker** role
-- Task creation: title, description, location on a map, assignee, deadline
-- Interactive map with task markers colored by status
-- Location editing by dragging the marker (admin)
-- Comments on tasks (author + timestamp)
-- Filtering by status / assignee and full-text search by title / description
-- Role-based access: workers see and act only on their own tasks
-
-## Workflow
-
-```
-Created → In Progress → Done → Verified
-```
-
-- **Worker** (assignee only): `Created → InProgress`, `InProgress → Done`
-- **Admin**: `Done → Verified` (confirm closure) or `Done → InProgress` (return to work)
-
-## Tech stack
-
-| Layer    | Technology |
-|----------|------------|
-| Backend  | .NET 9, ASP.NET Core Web API, EF Core 9, Npgsql, JWT |
-| Frontend | Angular 18, PrimeNG 18 (Aura theme), Leaflet (OpenStreetMap) |
-| Database | PostgreSQL 16 |
-| Infra    | Docker, docker compose, nginx, Makefile |
-
-Backend follows Clean Architecture: `Domain` → `Application` → `Infrastructure` → `Api`, with the repository pattern, services, and Unit of Work.
-
-## Run
-
-Prerequisites: Docker with the compose plugin (and `make`, optional).
-
-```bash
-git clone <repo-url>
-cd field-task-manager
-make run          # or: docker compose up --build -d
-```
-
-| What | URL |
-|------|-----|
-| Application | http://localhost:8080 |
-| API / Swagger | http://localhost:5080/swagger |
-
-**Default admin:** `admin@ftm.local` / `Admin123!`
-(configurable via `Admin__Email` / `Admin__Password` env vars in `docker-compose.yml`)
-
-Other commands: `make logs`, `make stop`, `make clean` (removes volumes and images).
-
-## Project structure
-
-```
-backend/
-  src/
-    FieldTaskManager.Domain/          # entities, enums, repository interfaces
-    FieldTaskManager.Application/     # DTOs, services, business rules
-    FieldTaskManager.Infrastructure/  # EF Core, repositories, UoW, JWT, seeding
-    FieldTaskManager.Api/             # controllers, middleware, DI
-frontend/
-  src/app/
-    core/                             # auth, interceptor, guard, API services, models
-    features/                         # login/register, shell, tasks, map
-docker-compose.yml
-Makefile
-```
-
 ## Notes
 
-- The database schema is created automatically on startup (`EnsureCreated`) — sufficient for a pilot; for production this would be replaced with EF Core migrations.
-- The API waits for PostgreSQL via a healthcheck plus a retry loop on startup.
-- nginx serves the Angular app and proxies `/api` to the backend, so the frontend needs no hardcoded API URL.
+Загальні витрачені години на проєкт: приблизно **8-10 годин**.
+
+За цей час було розгорнуто мікросервісну **event-driven** архітектуру з такими сервісами:
+
+- **Frontend Web** - Angular застосунок, який віддається через nginx.
+- **Gateway** - єдина точка входу для frontend, проксі до backend-сервісів.
+- **Core API** - основний сервіс автентифікації, організацій, користувачів, завдань і коментарів.
+- **Notification Service** - обробка подій завдань і внутрішніх сповіщень.
+- **Scheduler Service** - планування нагадувань по дедлайнах завдань.
+- **Earnings Service** - нарахування винагороди за підтверджені завдання, баланси та статистика.
+- **Payout Service** - мок-виплати користувачам із фіксацією історії виплат.
+- **Kafka** - брокер подій для взаємодії сервісів.
+
+Я свідомо відійшов від стандартного ТЗ і побудував реалізацію на основі **організацій**. Тобто в системі є три ролі:
+
+- **Super Admin** - керує організаціями.
+- **Org Admin** - адміністратор конкретної організації, керує користувачами, завданнями, виплатами та статистикою.
+- **Worker** - виконавець організації, бачить свої завдання, змінює статуси, додає коментарі та переглядає власний баланс/історію виплат.
+
+Базове ТЗ покрите повністю, а зверху додано організаційну модель, event-driven комунікацію, окремі сервіси для нотифікацій, планування, нарахувань і виплат.
+
+## Архітектура застосунку
+
+```mermaid
+flowchart LR
+    User["Користувач / браузер"] --> Web["Frontend Web\nAngular + PrimeNG + nginx"]
+    Web --> Gateway["Gateway\nReverse Proxy"]
+
+    Gateway --> Api["Core API\nAuth, Organizations, Users,\nTasks, Comments"]
+    Gateway --> Notifications["Notification Service\nIn-app notifications"]
+    Gateway --> Earnings["Earnings Service\nBalances, rewards, statistics"]
+    Gateway --> Payouts["Payout Service\nMock payouts, payout history"]
+
+    Api --> CoreDb[("PostgreSQL\nCore DB")]
+    Notifications --> NotificationDb[("PostgreSQL\nNotifications DB")]
+    Earnings --> EarningsDb[("PostgreSQL\nEarnings DB")]
+    Payouts --> PayoutDb[("PostgreSQL\nPayout DB")]
+    Scheduler --> SchedulerDb[("MongoDB\nScheduler DB")]
+
+    Api -- "Task events / Outbox" --> Kafka["Kafka\ntask-events"]
+    Kafka --> Notifications
+    Kafka --> Earnings
+    Kafka --> Scheduler["Scheduler Service\nDeadline reminders"]
+
+    Scheduler -- "Internal API\nreminder dispatch" --> Api
+    Payouts -- "Internal API\napply payout" --> Earnings
+```

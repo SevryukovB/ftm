@@ -13,6 +13,7 @@
     "map": "Map",
     "notifications": "Notifications",
     "organizations": "Organizations",
+    "payoutHistory": "Payout History",
     "settings": "Settings",
     "signOut": "Sign out",
     "statistics": "Statistics",
@@ -181,23 +182,39 @@
     "balanceTooltip": "Current earned balance"
   },
   "statistics": {
+    "empty": "No tasks yet.",
+    "loadFailed": "Failed to load task statistics",
+    "subtitle": "Task totals and direct links to every task in the organization",
+    "task": "Task",
+    "title": "Statistics",
+    "totalTasks": "Total tasks"
+  },
+  "payoutHistory": {
     "balanceUah": "UAH balance",
     "balanceUsd": "USD balance",
+    "activity": "Activity",
+    "balanceShort": "Balance",
     "earnedUah": "UAH earned",
     "earnedUsd": "USD earned",
+    "earnedShort": "Earned",
     "empty": "No earnings yet.",
     "from": "From",
-    "loadFailed": "Failed to load statistics",
+    "loadFailed": "Failed to load payout history",
     "subtitle": "Organization earnings, task rewards, and mocked payouts",
-    "title": "Statistics",
+    "title": "Payout History",
     "to": "To",
     "user": "User",
+    "payoutsCount": "Payouts",
     "verifiedTasks": "Verified tasks",
+    "verifiedTasksShort": "Verified",
     "history": {
       "amount": "Amount",
+      "completed": "Completed",
       "date": "Date",
-      "empty": "No verified task rewards for this period.",
+      "empty": "No payouts for this period.",
       "loading": "Loading history...",
+      "payout": "Payout",
+      "status": "Status",
       "task": "Task"
     },
     "payout": {
@@ -206,6 +223,12 @@
       "paid": "Payout completed",
       "pay": "Pay out",
       "title": "Payout to {{user}}"
+    },
+    "status": {
+      "Completed": "Completed",
+      "Failed": "Failed",
+      "Processing": "Processing",
+      "Requested": "Requested"
     }
   },
   "settings": {

@@ -52,6 +52,10 @@ import { BalanceSummaryComponent } from '../../shared/balance-summary.component'
                 <i class="pi pi-chart-line"></i>
                 <span>{{ 'nav.statistics' | translate }}</span>
               </a>
+              <a routerLink="/payout-history" routerLinkActive="active">
+                <i class="pi pi-wallet"></i>
+                <span>{{ 'nav.payoutHistory' | translate }}</span>
+              </a>
             }
             @if (auth.isSuperAdmin()) {
               <a routerLink="/organizations" routerLinkActive="active">

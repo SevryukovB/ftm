@@ -14,6 +14,7 @@ import { HomeRedirectComponent } from './features/home-redirect.component';
 import { NotificationsComponent } from './features/notifications/notifications.component';
 import { SettingsComponent } from './features/settings/settings.component';
 import { StatisticsComponent } from './features/statistics/statistics.component';
+import { PayoutHistoryComponent } from './features/payout-history/payout-history.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -29,6 +30,7 @@ export const routes: Routes = [
       { path: 'tasks/:id', component: TaskDetailsComponent, canActivate: [orgAdminGuard] },
       { path: 'map', component: MapViewComponent, canActivate: [orgAdminGuard] },
       { path: 'statistics', component: StatisticsComponent, canActivate: [orgAdminGuard] },
+      { path: 'payout-history', component: PayoutHistoryComponent, canActivate: [orgAdminGuard] },
       { path: 'notifications', component: NotificationsComponent },
       { path: 'settings', component: SettingsComponent },
       { path: 'users', component: UsersComponent, canActivate: [orgAdminGuard] },

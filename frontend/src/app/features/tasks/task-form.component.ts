@@ -42,7 +42,7 @@ let mapSeq = 0;
         <textarea pTextarea rows="3" [(ngModel)]="description" [placeholder]="'tasks.form.descriptionPlaceholder' | translate"></textarea>
       </div>
 
-      <div class="grid-2">
+      <div class="grid-3">
         <div class="field">
           <label>{{ 'tasks.assignee' | translate }}</label>
           <p-select
@@ -63,6 +63,17 @@ let mapSeq = 0;
             hourFormat="24"
             dateFormat="dd.mm.yy"
             [showClear]="true"
+            (ngModelChange)="onDeadlineChange($event)"
+            appendTo="body" />
+        </div>
+        <div class="field">
+          <label>{{ 'tasks.form.reminder' | translate }}</label>
+          <p-select
+            [options]="reminderOptions"
+            optionLabel="label"
+            optionValue="value"
+            [(ngModel)]="reminderOffsetMinutes"
+            [disabled]="!deadline"
             appendTo="body" />
         </div>
       </div>
@@ -86,7 +97,8 @@ let mapSeq = 0;
   styles: [`
     .field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem; }
     .field input, .field textarea { width: 100%; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+    @media (max-width: 720px) { .grid-3 { grid-template-columns: 1fr; } }
     .pick-map { height: 260px; border-radius: 8px; overflow: hidden; }
     :host ::ng-deep .p-select, :host ::ng-deep .p-datepicker { width: 100%; }
   `]
@@ -104,6 +116,7 @@ export class TaskFormComponent implements AfterViewInit, OnDestroy {
   description = '';
   assigneeId: string | null = null;
   deadline: Date | null = null;
+  reminderOffsetMinutes: number | null = null;
   latitude: number | null = null;
   longitude: number | null = null;
   saving = false;
@@ -112,6 +125,15 @@ export class TaskFormComponent implements AfterViewInit, OnDestroy {
   private marker: L.Marker | null = null;
 
   constructor(private tasks: TaskService, private messages: MessageService, private translate: TranslateService) {}
+
+  get reminderOptions(): Array<{ label: string; value: number | null }> {
+    return [
+      { label: this.translate.instant('tasks.form.noReminder'), value: null },
+      { label: this.translate.instant('tasks.form.reminder1h'), value: 60 },
+      { label: this.translate.instant('tasks.form.reminder4h'), value: 240 },
+      { label: this.translate.instant('tasks.form.reminder1d'), value: 1440 }
+    ];
+  }
 
   get canSave(): boolean {
     return !!this.title.trim() && this.latitude !== null && this.longitude !== null;
@@ -187,6 +209,7 @@ export class TaskFormComponent implements AfterViewInit, OnDestroy {
       this.description = this.task.description;
       this.assigneeId = this.task.assignee?.id ?? null;
       this.deadline = this.task.deadline ? new Date(this.task.deadline) : null;
+      this.reminderOffsetMinutes = this.task.reminderOffsetMinutes ?? null;
       this.latitude = this.task.latitude;
       this.longitude = this.task.longitude;
     } else {
@@ -194,8 +217,15 @@ export class TaskFormComponent implements AfterViewInit, OnDestroy {
       this.description = '';
       this.assigneeId = null;
       this.deadline = null;
+      this.reminderOffsetMinutes = null;
       this.latitude = null;
       this.longitude = null;
+    }
+  }
+
+  onDeadlineChange(value: Date | null): void {
+    if (!value) {
+      this.reminderOffsetMinutes = null;
     }
   }
 
@@ -230,7 +260,8 @@ export class TaskFormComponent implements AfterViewInit, OnDestroy {
       latitude: this.latitude!,
       longitude: this.longitude!,
       assigneeId: this.assigneeId,
-      deadline: this.deadline ? this.deadline.toISOString() : null
+      deadline: this.deadline ? this.deadline.toISOString() : null,
+      reminderOffsetMinutes: this.deadline ? this.reminderOffsetMinutes : null
     };
 
     const request$ = this.task

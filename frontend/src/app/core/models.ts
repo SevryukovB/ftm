@@ -1,6 +1,6 @@
 export type Role = 'SuperAdmin' | 'OrgAdmin' | 'Worker';
 
-export type TaskStatus = 'Created' | 'InProgress' | 'Done' | 'Verified';
+export type TaskStatus = 'Created' | 'InProgress' | 'Done' | 'Verified' | 'NotCompleted';
 
 export interface User {
   id: string;
@@ -31,6 +31,7 @@ export interface TaskItem {
   latitude: number;
   longitude: number;
   deadline: string | null;
+  reminderOffsetMinutes: number | null;
   status: TaskStatus;
   assignee: User | null;
   createdBy: User;
@@ -67,11 +68,12 @@ export interface NotificationPreferences {
   telegramUsername: string | null;
 }
 
-export const STATUS_META: Record<TaskStatus, { label: string; color: string; severity: 'info' | 'warn' | 'success' | 'secondary' }> = {
+export const STATUS_META: Record<TaskStatus, { label: string; color: string; severity: 'info' | 'warn' | 'success' | 'secondary' | 'danger' }> = {
   Created: { label: 'Created', color: '#3b82f6', severity: 'info' },
   InProgress: { label: 'In Progress', color: '#f59e0b', severity: 'warn' },
   Done: { label: 'Done', color: '#22c55e', severity: 'success' },
-  Verified: { label: 'Verified', color: '#8b5cf6', severity: 'secondary' }
+  Verified: { label: 'Verified', color: '#8b5cf6', severity: 'secondary' },
+  NotCompleted: { label: 'Not completed', color: '#ef4444', severity: 'danger' }
 };
 
-export const STATUS_LIST: TaskStatus[] = ['Created', 'InProgress', 'Done', 'Verified'];
+export const STATUS_LIST: TaskStatus[] = ['Created', 'InProgress', 'Done', 'Verified', 'NotCompleted'];

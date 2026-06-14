@@ -27,7 +27,8 @@
     "Created": "Створено",
     "InProgress": "У роботі",
     "Done": "Виконано",
-    "Verified": "Підтверджено"
+    "Verified": "Підтверджено",
+    "NotCompleted": "Не виконано"
   },
   "auth": {
     "email": "Email",
@@ -110,6 +111,11 @@
       "locationHint": "натисніть на мапу, щоб поставити маркер, і перетягніть його для уточнення",
       "locationMissing": "Локацію ще не вказано",
       "newTitle": "Нове завдання",
+      "noReminder": "Без нагадування",
+      "reminder": "Нагадування",
+      "reminder1d": "За 1 день",
+      "reminder1h": "За 1 годину",
+      "reminder4h": "За 4 години",
       "saveChanges": "Зберегти зміни",
       "title": "Назва",
       "titlePlaceholder": "Перевірити насос зрошення #3"

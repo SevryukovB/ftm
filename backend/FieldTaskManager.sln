@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FieldTaskManager.Notificati
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FieldTaskManager.Gateway", "src\FieldTaskManager.Gateway\FieldTaskManager.Gateway.csproj", "{3AB2D385-E17A-4967-B937-8CBA4941A857}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FieldTaskManager.SchedulerService", "src\FieldTaskManager.SchedulerService\FieldTaskManager.SchedulerService.csproj", "{A3894B12-785E-4E6D-93E8-9E06A768BB67}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -97,6 +99,18 @@ Global
 		{3AB2D385-E17A-4967-B937-8CBA4941A857}.Release|x64.Build.0 = Release|Any CPU
 		{3AB2D385-E17A-4967-B937-8CBA4941A857}.Release|x86.ActiveCfg = Release|Any CPU
 		{3AB2D385-E17A-4967-B937-8CBA4941A857}.Release|x86.Build.0 = Release|Any CPU
+		{A3894B12-785E-4E6D-93E8-9E06A768BB67}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3894B12-785E-4E6D-93E8-9E06A768BB67}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3894B12-785E-4E6D-93E8-9E06A768BB67}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A3894B12-785E-4E6D-93E8-9E06A768BB67}.Debug|x64.Build.0 = Debug|Any CPU
+		{A3894B12-785E-4E6D-93E8-9E06A768BB67}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A3894B12-785E-4E6D-93E8-9E06A768BB67}.Debug|x86.Build.0 = Debug|Any CPU
+		{A3894B12-785E-4E6D-93E8-9E06A768BB67}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3894B12-785E-4E6D-93E8-9E06A768BB67}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A3894B12-785E-4E6D-93E8-9E06A768BB67}.Release|x64.ActiveCfg = Release|Any CPU
+		{A3894B12-785E-4E6D-93E8-9E06A768BB67}.Release|x64.Build.0 = Release|Any CPU
+		{A3894B12-785E-4E6D-93E8-9E06A768BB67}.Release|x86.ActiveCfg = Release|Any CPU
+		{A3894B12-785E-4E6D-93E8-9E06A768BB67}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -104,5 +118,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{DBDAD916-0EC5-4CC6-BEA8-B8571F3B5B4B} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{3AB2D385-E17A-4967-B937-8CBA4941A857} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{A3894B12-785E-4E6D-93E8-9E06A768BB67} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

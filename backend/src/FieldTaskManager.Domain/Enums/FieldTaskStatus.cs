@@ -5,5 +5,6 @@ public enum FieldTaskStatus
     Created = 0,
     InProgress = 1,
     Done = 2,
-    Verified = 3
+    Verified = 3,
+    NotCompleted = 4
 }

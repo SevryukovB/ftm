@@ -15,7 +15,20 @@ public sealed record TaskCreatedEvent(
     string? AssigneeName,
     Guid CreatedById,
     string CreatedByName,
-    DateTime? Deadline);
+    DateTime? Deadline,
+    int? ReminderOffsetMinutes);
+
+public sealed record TaskUpdatedEvent(
+    Guid TaskId,
+    string Title,
+    Guid OrganizationId,
+    Guid? AssigneeId,
+    string? AssigneeName,
+    Guid CreatedById,
+    string CreatedByName,
+    string Status,
+    DateTime? Deadline,
+    int? ReminderOffsetMinutes);
 
 public sealed record TaskStatusChangedEvent(
     Guid TaskId,
@@ -27,7 +40,19 @@ public sealed record TaskStatusChangedEvent(
     Guid CreatedById,
     string CreatedByName,
     Guid ChangedById,
-    DateTime? Deadline);
+    DateTime? Deadline,
+    int? ReminderOffsetMinutes);
+
+public sealed record TaskReminderDueEvent(
+    Guid TaskId,
+    string Title,
+    Guid OrganizationId,
+    Guid? AssigneeId,
+    string? AssigneeName,
+    Guid CreatedById,
+    string CreatedByName,
+    DateTime Deadline,
+    int ReminderOffsetMinutes);
 
 public sealed record TaskCommentAddedEvent(
     Guid TaskId,

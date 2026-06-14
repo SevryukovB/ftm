@@ -10,6 +10,7 @@ public sealed record TaskDto(
     double Latitude,
     double Longitude,
     DateTime? Deadline,
+    int? ReminderOffsetMinutes,
     string Status,
     UserDto? Assignee,
     UserDto CreatedBy,
@@ -25,7 +26,8 @@ public sealed record CreateTaskRequest(
     [Required, Range(-90, 90)] double Latitude,
     [Required, Range(-180, 180)] double Longitude,
     Guid? AssigneeId,
-    DateTime? Deadline);
+    DateTime? Deadline,
+    [Range(1, 10080)] int? ReminderOffsetMinutes);
 
 public sealed record UpdateTaskRequest(
     [Required, MaxLength(200)] string Title,
@@ -33,7 +35,8 @@ public sealed record UpdateTaskRequest(
     [Required, Range(-90, 90)] double Latitude,
     [Required, Range(-180, 180)] double Longitude,
     Guid? AssigneeId,
-    DateTime? Deadline);
+    DateTime? Deadline,
+    [Range(1, 10080)] int? ReminderOffsetMinutes);
 
 public sealed record UpdateLocationRequest(
     [Required, Range(-90, 90)] double Latitude,

@@ -27,7 +27,8 @@
     "Created": "Created",
     "InProgress": "In Progress",
     "Done": "Done",
-    "Verified": "Verified"
+    "Verified": "Verified",
+    "NotCompleted": "Not completed"
   },
   "auth": {
     "email": "Email",
@@ -110,6 +111,11 @@
       "locationHint": "click the map to place the marker, drag it to adjust",
       "locationMissing": "Location is not set yet",
       "newTitle": "New task",
+      "noReminder": "No reminder",
+      "reminder": "Reminder",
+      "reminder1d": "1 day before",
+      "reminder1h": "1 hour before",
+      "reminder4h": "4 hours before",
       "saveChanges": "Save changes",
       "title": "Title",
       "titlePlaceholder": "Inspect irrigation pump #3"

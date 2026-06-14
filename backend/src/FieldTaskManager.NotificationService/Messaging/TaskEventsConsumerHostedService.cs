@@ -122,9 +122,37 @@ public sealed class TaskEventsConsumerHostedService(
                 "TaskVerified",
                 taskId,
                 envelope.Payload.GetRawText())),
+            "TaskNotCompleted" => BuildParticipantNotifications(
+                payload,
+                "Task not completed",
+                $"Task missed its deadline: {title}",
+                "TaskNotCompleted",
+                taskId,
+                envelope.Payload.GetRawText()),
+            "TaskReminderDue" => BuildParticipantNotifications(
+                payload,
+                "Task reminder",
+                $"Task is due in {FormatReminderOffset(payload)}: {title}",
+                "TaskReminderDue",
+                taskId,
+                envelope.Payload.GetRawText()),
             "TaskCommentAdded" => BuildCommentNotifications(payload, taskId, title, envelope.Payload.GetRawText()),
             _ => []
         };
+    }
+
+    private static IReadOnlyList<Notification> BuildParticipantNotifications(
+        JsonElement payload,
+        string title,
+        string message,
+        string type,
+        Guid taskId,
+        string payloadJson)
+    {
+        var recipientIds = GetParticipantIds(payload);
+        return recipientIds
+            .Select(userId => CreateNotification(userId, title, message, type, taskId, payloadJson))
+            .ToList();
     }
 
     private static IReadOnlyList<Notification> BuildCommentNotifications(
@@ -138,13 +166,7 @@ public sealed class TaskEventsConsumerHostedService(
         var commentText = payload.GetProperty("commentText").GetString() ?? string.Empty;
         var shortComment = commentText.Length <= 120 ? commentText : $"{commentText[..120]}...";
 
-        var recipientIds = new HashSet<Guid>();
-        if (payload.TryGetProperty("assigneeId", out var assigneeId) && assigneeId.ValueKind != JsonValueKind.Null)
-        {
-            recipientIds.Add(assigneeId.GetGuid());
-        }
-
-        recipientIds.Add(payload.GetProperty("createdById").GetGuid());
+        var recipientIds = GetParticipantIds(payload);
         recipientIds.Remove(authorId);
 
         return recipientIds
@@ -156,6 +178,37 @@ public sealed class TaskEventsConsumerHostedService(
                 taskId,
                 payloadJson))
             .ToList();
+    }
+
+    private static HashSet<Guid> GetParticipantIds(JsonElement payload)
+    {
+        var recipientIds = new HashSet<Guid>();
+        if (payload.TryGetProperty("assigneeId", out var assigneeId) && assigneeId.ValueKind != JsonValueKind.Null)
+        {
+            recipientIds.Add(assigneeId.GetGuid());
+        }
+
+        recipientIds.Add(payload.GetProperty("createdById").GetGuid());
+        return recipientIds;
+    }
+
+    private static string FormatReminderOffset(JsonElement payload)
+    {
+        if (!payload.TryGetProperty("reminderOffsetMinutes", out var value) || value.ValueKind == JsonValueKind.Null)
+        {
+            return "the configured reminder window";
+        }
+
+        var minutes = value.GetInt32();
+        return minutes switch
+        {
+            60 => "1 hour",
+            240 => "4 hours",
+            1440 => "1 day",
+            _ when minutes % 1440 == 0 => $"{minutes / 1440} days",
+            _ when minutes % 60 == 0 => $"{minutes / 60} hours",
+            _ => $"{minutes} minutes"
+        };
     }
 
     private static Notification? BuildForOptionalRecipient(

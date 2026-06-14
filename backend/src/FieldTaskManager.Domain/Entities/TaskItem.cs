@@ -10,6 +10,7 @@ public class TaskItem
     public double Latitude { get; set; }
     public double Longitude { get; set; }
     public DateTime? Deadline { get; set; }
+    public int? ReminderOffsetMinutes { get; set; }
     public FieldTaskStatus Status { get; set; } = FieldTaskStatus.Created;
 
     public Guid OrganizationId { get; set; }

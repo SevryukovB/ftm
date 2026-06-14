@@ -34,6 +34,7 @@ public static class DtoMapper
             task.Latitude,
             task.Longitude,
             task.Deadline,
+            task.ReminderOffsetMinutes,
             task.Status.ToString(),
             task.Assignee?.ToDto(),
             task.CreatedBy.ToDto(),

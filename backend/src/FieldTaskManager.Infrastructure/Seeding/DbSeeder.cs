@@ -67,6 +67,7 @@ public static class DbSeeder
             ALTER TABLE IF EXISTS organizations ADD COLUMN IF NOT EXISTS "UpdatedAt" timestamp with time zone NOT NULL DEFAULT NOW();
             ALTER TABLE IF EXISTS tasks ADD COLUMN IF NOT EXISTS "OrganizationId" uuid NULL;
             ALTER TABLE IF EXISTS tasks ADD COLUMN IF NOT EXISTS "Deadline" timestamp with time zone NULL;
+            ALTER TABLE IF EXISTS tasks ADD COLUMN IF NOT EXISTS "ReminderOffsetMinutes" integer NULL;
             ALTER TABLE IF EXISTS tasks ADD COLUMN IF NOT EXISTS "CreatedAt" timestamp with time zone NOT NULL DEFAULT NOW();
             ALTER TABLE IF EXISTS tasks ADD COLUMN IF NOT EXISTS "UpdatedAt" timestamp with time zone NOT NULL DEFAULT NOW();
             CREATE INDEX IF NOT EXISTS "IX_users_OrganizationId" ON users ("OrganizationId");

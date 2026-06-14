@@ -44,7 +44,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             builder.HasKey(t => t.Id);
             builder.Property(t => t.Title).IsRequired().HasMaxLength(200);
             builder.Property(t => t.Description).HasMaxLength(4000);
-            builder.Property(t => t.Status).HasConversion<string>().HasMaxLength(16);
+            builder.Property(t => t.Status).HasConversion<string>().HasMaxLength(32);
             builder.HasIndex(t => t.OrganizationId);
             builder.HasIndex(t => t.Status);
             builder.HasIndex(t => t.AssigneeId);

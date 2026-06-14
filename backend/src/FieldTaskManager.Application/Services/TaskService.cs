@@ -99,6 +99,7 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
             OrganizationId = organizationId,
             AssigneeId = request.AssigneeId,
             Deadline = NormalizeUtc(request.Deadline),
+            ReminderOffsetMinutes = request.ReminderOffsetMinutes,
             CreatedById = creator.Id
         };
 
@@ -111,7 +112,8 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
             assigneeResult.Value?.FullName,
             task.CreatedById,
             creator.FullName,
-            task.Deadline));
+            task.Deadline,
+            task.ReminderOffsetMinutes));
         await unitOfWork.SaveChangesAsync(ct);
 
         var createdTask = await GetTaskAsync(task.Id, ct);
@@ -160,7 +162,20 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
         task.Longitude = request.Longitude;
         task.AssigneeId = request.AssigneeId;
         task.Deadline = NormalizeUtc(request.Deadline);
+        task.ReminderOffsetMinutes = request.ReminderOffsetMinutes;
         task.UpdatedAt = DateTime.UtcNow;
+
+        AddTaskEvent("TaskUpdated", task, new TaskUpdatedEvent(
+            task.Id,
+            task.Title,
+            task.OrganizationId,
+            task.AssigneeId,
+            assigneeResult.Value?.FullName,
+            task.CreatedById,
+            task.CreatedBy.FullName,
+            task.Status.ToString(),
+            task.Deadline,
+            task.ReminderOffsetMinutes));
 
         await unitOfWork.SaveChangesAsync(ct);
         var updatedTask = await GetTaskAsync(id, ct);
@@ -243,8 +258,51 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
                     task.CreatedById,
                     task.CreatedBy.FullName,
                     user.Id,
-                    task.Deadline));
+                    task.Deadline,
+                    task.ReminderOffsetMinutes));
         }
+
+        await unitOfWork.SaveChangesAsync(ct);
+        return Result.Success(task.ToDto());
+    }
+
+    public async Task<Result<TaskDto>> MarkNotCompletedAsync(Guid id, CancellationToken ct = default)
+    {
+        var taskResult = await GetTaskAsync(id, ct);
+        if (taskResult.IsFailure)
+        {
+            return Result.Failure<TaskDto>(taskResult.Error);
+        }
+
+        var task = taskResult.Value;
+        if (task.Status is FieldTaskStatus.Done or FieldTaskStatus.Verified or FieldTaskStatus.NotCompleted)
+        {
+            return Result.Success(task.ToDto());
+        }
+
+        if (task.Deadline is { } deadline && deadline > DateTime.UtcNow)
+        {
+            return Result.Failure<TaskDto>(Error.BadRequest("Task deadline has not passed yet."));
+        }
+
+        task.Status = FieldTaskStatus.NotCompleted;
+        task.UpdatedAt = DateTime.UtcNow;
+
+        AddTaskEvent(
+            "TaskNotCompleted",
+            task,
+            new TaskStatusChangedEvent(
+                task.Id,
+                task.Title,
+                task.OrganizationId,
+                task.Status.ToString(),
+                task.AssigneeId,
+                task.Assignee?.FullName,
+                task.CreatedById,
+                task.CreatedBy.FullName,
+                Guid.Empty,
+                task.Deadline,
+                task.ReminderOffsetMinutes));
 
         await unitOfWork.SaveChangesAsync(ct);
         return Result.Success(task.ToDto());

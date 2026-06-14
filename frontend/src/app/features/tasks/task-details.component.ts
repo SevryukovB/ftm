@@ -46,6 +46,7 @@ import { TaskFormComponent } from './task-form.component';
                 <span class="label">{{ 'tasks.deadline' | translate }}</span>
                 <span [class.overdue]="isOverdue(t)">{{ t.deadline ? (t.deadline | date: 'dd.MM.yyyy HH:mm') : '—' }}</span>
               </div>
+              <div class="meta-row"><span class="label">{{ 'tasks.form.reminder' | translate }}</span><span>{{ reminderLabel(t.reminderOffsetMinutes) }}</span></div>
               <div class="meta-row"><span class="label">{{ 'tasks.createdBy' | translate }}</span><span>{{ t.createdBy?.fullName || '—' }}, {{ t.createdAt | date: 'dd.MM.yyyy HH:mm' }}</span></div>
               <div class="meta-row"><span class="label">{{ 'tasks.location' | translate }}</span><span>{{ t.latitude | number: '1.5-5' }}, {{ t.longitude | number: '1.5-5' }}</span></div>
             </div>
@@ -522,9 +523,18 @@ export class TaskDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.translate.instant(`status.${status}`);
   }
 
+  reminderLabel(minutes: number | null): string {
+    switch (minutes) {
+      case 60: return this.translate.instant('tasks.form.reminder1h');
+      case 240: return this.translate.instant('tasks.form.reminder4h');
+      case 1440: return this.translate.instant('tasks.form.reminder1d');
+      default: return this.translate.instant('tasks.form.noReminder');
+    }
+  }
+
   isOverdue(t: TaskItem): boolean {
     return !!t.deadline
-      && t.status !== 'Done' && t.status !== 'Verified'
+      && t.status !== 'Done' && t.status !== 'Verified' && t.status !== 'NotCompleted'
       && new Date(t.deadline).getTime() < Date.now();
   }
 }

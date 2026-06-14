@@ -1,0 +1,15 @@
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+COPY src/FieldTaskManager.EarningsService/FieldTaskManager.EarningsService.csproj src/FieldTaskManager.EarningsService/
+RUN dotnet restore src/FieldTaskManager.EarningsService/FieldTaskManager.EarningsService.csproj
+
+COPY src/ src/
+RUN dotnet publish src/FieldTaskManager.EarningsService/FieldTaskManager.EarningsService.csproj -c Release -o /app/publish /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:9.0
+WORKDIR /app
+COPY --from=build /app/publish .
+ENV ASPNETCORE_HTTP_PORTS=8080
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "FieldTaskManager.EarningsService.dll"]

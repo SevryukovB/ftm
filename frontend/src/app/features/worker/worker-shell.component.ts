@@ -6,11 +6,12 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../core/auth.service';
 import { NotificationService } from '../../core/notification.service';
 import { LanguageSelectComponent } from '../../shared/language-select.component';
+import { BalanceSummaryComponent } from '../../shared/balance-summary.component';
 
 @Component({
   selector: 'app-worker-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, ButtonModule, TooltipModule, TranslatePipe, LanguageSelectComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ButtonModule, TooltipModule, TranslatePipe, LanguageSelectComponent, BalanceSummaryComponent],
   template: `
     <div class="shell worker-shell">
       <div class="app-header worker-header">
@@ -18,6 +19,7 @@ import { LanguageSelectComponent } from '../../shared/language-select.component'
         <div class="header-spacer"></div>
         <div class="app-header-actions">
           <app-language-select />
+          <app-balance-summary />
           <a class="notification-link" routerLink="/notifications" routerLinkActive="active" [pTooltip]="'nav.notifications' | translate">
             <i class="pi pi-bell"></i>
             @if (unreadCount() > 0) {

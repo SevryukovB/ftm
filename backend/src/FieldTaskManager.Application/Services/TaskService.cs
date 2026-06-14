@@ -100,6 +100,8 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
             AssigneeId = request.AssigneeId,
             Deadline = NormalizeUtc(request.Deadline),
             ReminderOffsetMinutes = request.ReminderOffsetMinutes,
+            RewardAmountMinor = request.RewardAmountMinor,
+            RewardCurrency = NormalizeCurrency(request.RewardCurrency),
             CreatedById = creator.Id
         };
 
@@ -113,7 +115,9 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
             task.CreatedById,
             creator.FullName,
             task.Deadline,
-            task.ReminderOffsetMinutes));
+            task.ReminderOffsetMinutes,
+            task.RewardAmountMinor,
+            task.RewardCurrency));
         await unitOfWork.SaveChangesAsync(ct);
 
         var createdTask = await GetTaskAsync(task.Id, ct);
@@ -163,6 +167,8 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
         task.AssigneeId = request.AssigneeId;
         task.Deadline = NormalizeUtc(request.Deadline);
         task.ReminderOffsetMinutes = request.ReminderOffsetMinutes;
+        task.RewardAmountMinor = request.RewardAmountMinor;
+        task.RewardCurrency = NormalizeCurrency(request.RewardCurrency);
         task.UpdatedAt = DateTime.UtcNow;
 
         AddTaskEvent("TaskUpdated", task, new TaskUpdatedEvent(
@@ -175,7 +181,9 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
             task.CreatedBy.FullName,
             task.Status.ToString(),
             task.Deadline,
-            task.ReminderOffsetMinutes));
+            task.ReminderOffsetMinutes,
+            task.RewardAmountMinor,
+            task.RewardCurrency));
 
         await unitOfWork.SaveChangesAsync(ct);
         var updatedTask = await GetTaskAsync(id, ct);
@@ -259,7 +267,9 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
                     task.CreatedBy.FullName,
                     user.Id,
                     task.Deadline,
-                    task.ReminderOffsetMinutes));
+                    task.ReminderOffsetMinutes,
+                    task.RewardAmountMinor,
+                    task.RewardCurrency));
         }
 
         await unitOfWork.SaveChangesAsync(ct);
@@ -302,7 +312,9 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
                 task.CreatedBy.FullName,
                 Guid.Empty,
                 task.Deadline,
-                task.ReminderOffsetMinutes));
+                task.ReminderOffsetMinutes,
+                task.RewardAmountMinor,
+                task.RewardCurrency));
 
         await unitOfWork.SaveChangesAsync(ct);
         return Result.Success(task.ToDto());
@@ -484,4 +496,7 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
                 DateTimeKind.Local => value.Value.ToUniversalTime(),
                 _ => DateTime.SpecifyKind(value.Value, DateTimeKind.Utc)
             };
+
+    private static string NormalizeCurrency(string currency) =>
+        currency.Trim().ToUpperInvariant();
 }

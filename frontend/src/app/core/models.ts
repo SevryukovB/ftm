@@ -1,6 +1,7 @@
 export type Role = 'SuperAdmin' | 'OrgAdmin' | 'Worker';
 
 export type TaskStatus = 'Created' | 'InProgress' | 'Done' | 'Verified' | 'NotCompleted';
+export type Currency = 'USD' | 'UAH';
 
 export interface User {
   id: string;
@@ -32,6 +33,8 @@ export interface TaskItem {
   longitude: number;
   deadline: string | null;
   reminderOffsetMinutes: number | null;
+  rewardAmountMinor: number;
+  rewardCurrency: Currency;
   status: TaskStatus;
   assignee: User | null;
   createdBy: User;
@@ -46,6 +49,58 @@ export interface TaskFilter {
   search?: string | null;
   updatedFrom?: string | null;
   updatedTo?: string | null;
+}
+
+export interface BalanceItem {
+  currency: Currency;
+  availableAmountMinor: number;
+  paidAmountMinor: number;
+}
+
+export interface BalanceSummary {
+  balances: BalanceItem[];
+}
+
+export interface EarningStatistics {
+  userId: string;
+  currency: Currency;
+  earnedAmountMinor: number;
+  paidAmountMinor: number;
+  availableAmountMinor: number;
+  verifiedTasksCount: number;
+}
+
+export interface TaskEarningHistory {
+  id: string;
+  taskId: string | null;
+  taskTitle: string;
+  currency: Currency;
+  amountMinor: number;
+  occurredAt: string;
+}
+
+export interface PayoutAmount {
+  currency: Currency;
+  amountMinor: number;
+}
+
+export interface PayoutItem {
+  id: string;
+  currency: Currency;
+  amountMinor: number;
+  status: string;
+  failureReason: string | null;
+}
+
+export interface Payout {
+  id: string;
+  userId: string;
+  organizationId: string;
+  requestedById: string;
+  status: string;
+  requestedAt: string;
+  completedAt: string | null;
+  items: PayoutItem[];
 }
 
 export interface AppNotification {

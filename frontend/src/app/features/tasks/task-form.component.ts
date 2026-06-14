@@ -13,6 +13,7 @@ import * as L from 'leaflet';
 
 import { TaskItem, User } from '../../core/models';
 import { TaskService } from '../../core/task.service';
+import { CURRENCIES, majorToMinor, minorToMajor } from '../../core/money';
 import { DEFAULT_CENTER, DEFAULT_ZOOM, createTileLayer, pickIcon } from '../../core/map-utils';
 
 let mapSeq = 0;
@@ -78,6 +79,28 @@ let mapSeq = 0;
         </div>
       </div>
 
+      <div class="grid-2">
+        <div class="field">
+          <label>{{ 'tasks.form.rewardAmount' | translate }}</label>
+          <input
+            pInputText
+            type="number"
+            min="0"
+            step="0.01"
+            [(ngModel)]="rewardAmount"
+            [placeholder]="'tasks.form.rewardAmountPlaceholder' | translate" />
+        </div>
+        <div class="field">
+          <label>{{ 'tasks.form.rewardCurrency' | translate }}</label>
+          <p-select
+            [options]="currencyOptions"
+            optionLabel="label"
+            optionValue="value"
+            [(ngModel)]="rewardCurrency"
+            appendTo="body" />
+        </div>
+      </div>
+
       <div class="field">
         <label>{{ 'tasks.location' | translate }} * <span class="muted">- {{ 'tasks.form.locationHint' | translate }}</span></label>
         <div class="pick-map" [id]="mapId"></div>
@@ -128,7 +151,9 @@ let mapSeq = 0;
     .field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem; }
     .field input, .field textarea { width: 100%; }
     .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     @media (max-width: 720px) { .grid-3 { grid-template-columns: 1fr; } }
+    @media (max-width: 720px) { .grid-2 { grid-template-columns: 1fr; } }
     .pick-map { height: 260px; border-radius: 8px; overflow: hidden; }
     .coordinate-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: .75rem; }
     .coordinate-field { margin-bottom: 0; }
@@ -150,9 +175,12 @@ export class TaskFormComponent implements AfterViewInit, OnDestroy {
   assigneeId: string | null = null;
   deadline: Date | null = null;
   reminderOffsetMinutes: number | null = null;
+  rewardAmount = 0;
+  rewardCurrency: 'USD' | 'UAH' = 'UAH';
   latitude: number | null = null;
   longitude: number | null = null;
   saving = false;
+  readonly currencyOptions = CURRENCIES.map(value => ({ label: value, value }));
 
   private map: L.Map | null = null;
   private marker: L.Marker | null = null;
@@ -169,7 +197,7 @@ export class TaskFormComponent implements AfterViewInit, OnDestroy {
   }
 
   get canSave(): boolean {
-    return !!this.title.trim() && this.hasValidCoordinates();
+    return !!this.title.trim() && this.hasValidCoordinates() && this.rewardAmount >= 0;
   }
 
   ngAfterViewInit(): void {
@@ -243,6 +271,8 @@ export class TaskFormComponent implements AfterViewInit, OnDestroy {
       this.assigneeId = this.task.assignee?.id ?? null;
       this.deadline = this.task.deadline ? new Date(this.task.deadline) : null;
       this.reminderOffsetMinutes = this.task.reminderOffsetMinutes ?? null;
+      this.rewardAmount = minorToMajor(this.task.rewardAmountMinor ?? 0);
+      this.rewardCurrency = this.task.rewardCurrency ?? 'UAH';
       this.latitude = this.task.latitude;
       this.longitude = this.task.longitude;
     } else {
@@ -251,6 +281,8 @@ export class TaskFormComponent implements AfterViewInit, OnDestroy {
       this.assigneeId = null;
       this.deadline = null;
       this.reminderOffsetMinutes = null;
+      this.rewardAmount = 0;
+      this.rewardCurrency = 'UAH';
       this.latitude = null;
       this.longitude = null;
     }
@@ -316,7 +348,9 @@ export class TaskFormComponent implements AfterViewInit, OnDestroy {
       longitude: this.longitude!,
       assigneeId: this.assigneeId,
       deadline: this.deadline ? this.deadline.toISOString() : null,
-      reminderOffsetMinutes: this.deadline ? this.reminderOffsetMinutes : null
+      reminderOffsetMinutes: this.deadline ? this.reminderOffsetMinutes : null,
+      rewardAmountMinor: majorToMinor(this.rewardAmount),
+      rewardCurrency: this.rewardCurrency
     };
 
     const request$ = this.task

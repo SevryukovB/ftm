@@ -27,6 +27,34 @@ services:
     volumes:
       - notification_pgdata:/var/lib/postgresql/data
 
+  earnings-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ftm
+      POSTGRES_PASSWORD: ftm
+      POSTGRES_DB: ftm_earnings
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ftm -d ftm_earnings"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+    volumes:
+      - earnings_pgdata:/var/lib/postgresql/data
+
+  payout-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ftm
+      POSTGRES_PASSWORD: ftm
+      POSTGRES_DB: ftm_payouts
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ftm -d ftm_payouts"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+    volumes:
+      - payout_pgdata:/var/lib/postgresql/data
+
   scheduler-db:
     image: mongo:7
     volumes:
@@ -88,6 +116,44 @@ services:
       kafka:
         condition: service_started
 
+  earnings:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.earnings
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: Host=earnings-db;Port=5432;Database=ftm_earnings;Username=ftm;Password=ftm
+      Jwt__Key: ftm-pilot-super-secret-signing-key-change-me-0123456789
+      Jwt__Issuer: FieldTaskManager
+      Jwt__Audience: FieldTaskManager
+      Kafka__BootstrapServers: kafka:9092
+      Kafka__TaskEventsTopic: task-events
+      Kafka__ConsumerGroup: earnings-service
+      InternalApi__Key: ftm-internal-dev-key
+    depends_on:
+      earnings-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+  payouts:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.payouts
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: Host=payout-db;Port=5432;Database=ftm_payouts;Username=ftm;Password=ftm
+      Jwt__Key: ftm-pilot-super-secret-signing-key-change-me-0123456789
+      Jwt__Issuer: FieldTaskManager
+      Jwt__Audience: FieldTaskManager
+      Earnings__BaseUrl: http://earnings:8080
+      Earnings__InternalApiKey: ftm-internal-dev-key
+    depends_on:
+      payout-db:
+        condition: service_healthy
+      earnings:
+        condition: service_started
+
   scheduler:
     build:
       context: ./backend
@@ -117,9 +183,13 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ReverseProxy__Clusters__api__Destinations__api__Address: http://api:8080
       ReverseProxy__Clusters__notifications__Destinations__notifications__Address: http://notifications:8080
+      ReverseProxy__Clusters__earnings__Destinations__earnings__Address: http://earnings:8080
+      ReverseProxy__Clusters__payouts__Destinations__payouts__Address: http://payouts:8080
     depends_on:
       - api
       - notifications
+      - earnings
+      - payouts
       - scheduler
     ports:
       - "5080:8080"
@@ -134,4 +204,6 @@ services:
 volumes:
   pgdata:
   notification_pgdata:
+  earnings_pgdata:
+  payout_pgdata:
   scheduler_mongodata:

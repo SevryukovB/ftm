@@ -35,6 +35,8 @@ public static class DtoMapper
             task.Longitude,
             task.Deadline,
             task.ReminderOffsetMinutes,
+            task.RewardAmountMinor,
+            task.RewardCurrency,
             task.Status.ToString(),
             task.Assignee?.ToDto(),
             task.CreatedBy.ToDto(),

@@ -15,6 +15,7 @@
     "organizations": "Організації",
     "settings": "Налаштування",
     "signOut": "Вийти",
+    "statistics": "Статистика",
     "tasks": "Завдання",
     "users": "Користувачі"
   },
@@ -63,6 +64,7 @@
       "assignee": "Виконавець",
       "created": "Створено",
       "deadline": "Дедлайн",
+      "reward": "Винагорода",
       "status": "Статус",
       "title": "Назва"
     },
@@ -78,6 +80,7 @@
     "location": "Локація",
     "newTask": "Нове завдання",
     "overdue": "Прострочено",
+    "reward": "Винагорода",
     "searchPlaceholder": "Пошук за назвою / описом",
     "status": "Статус",
     "title": "Завдання",
@@ -121,6 +124,9 @@
       "reminder1d": "За 1 день",
       "reminder1h": "За 1 годину",
       "reminder4h": "За 4 години",
+      "rewardAmount": "Сума винагороди",
+      "rewardAmountPlaceholder": "150.00",
+      "rewardCurrency": "Валюта винагороди",
       "saveChanges": "Зберегти зміни",
       "title": "Назва",
       "titlePlaceholder": "Перевірити насос зрошення #3"
@@ -169,6 +175,37 @@
       "sms": "SMS",
       "telegram": "Telegram",
       "title": "Доставка"
+    }
+  },
+  "earnings": {
+    "balanceTooltip": "Поточний зароблений баланс"
+  },
+  "statistics": {
+    "balanceUah": "Баланс UAH",
+    "balanceUsd": "Баланс USD",
+    "earnedUah": "Зароблено UAH",
+    "earnedUsd": "Зароблено USD",
+    "empty": "Нарахувань ще немає.",
+    "from": "З",
+    "loadFailed": "Не вдалося завантажити статистику",
+    "subtitle": "Нарахування організації, винагороди за завдання та мок-виплати",
+    "title": "Статистика",
+    "to": "До",
+    "user": "Користувач",
+    "verifiedTasks": "Підтверджені завдання",
+    "history": {
+      "amount": "Сума",
+      "date": "Дата",
+      "empty": "За цей період немає винагород за підтверджені завдання.",
+      "loading": "Завантаження історії...",
+      "task": "Завдання"
+    },
+    "payout": {
+      "action": "Виплата",
+      "failed": "Не вдалося виконати виплату.",
+      "paid": "Виплату виконано",
+      "pay": "Виплатити",
+      "title": "Виплата для {{user}}"
     }
   },
   "settings": {

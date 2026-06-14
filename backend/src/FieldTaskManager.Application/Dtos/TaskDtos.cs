@@ -11,6 +11,8 @@ public sealed record TaskDto(
     double Longitude,
     DateTime? Deadline,
     int? ReminderOffsetMinutes,
+    long RewardAmountMinor,
+    string RewardCurrency,
     string Status,
     UserDto? Assignee,
     UserDto CreatedBy,
@@ -27,7 +29,9 @@ public sealed record CreateTaskRequest(
     [Required, Range(-180, 180)] double Longitude,
     Guid? AssigneeId,
     DateTime? Deadline,
-    [Range(1, 10080)] int? ReminderOffsetMinutes);
+    [Range(1, 10080)] int? ReminderOffsetMinutes,
+    [Range(0, 999999999)] long RewardAmountMinor,
+    [Required, RegularExpression("^(USD|UAH)$")] string RewardCurrency);
 
 public sealed record UpdateTaskRequest(
     [Required, MaxLength(200)] string Title,
@@ -36,7 +40,9 @@ public sealed record UpdateTaskRequest(
     [Required, Range(-180, 180)] double Longitude,
     Guid? AssigneeId,
     DateTime? Deadline,
-    [Range(1, 10080)] int? ReminderOffsetMinutes);
+    [Range(1, 10080)] int? ReminderOffsetMinutes,
+    [Range(0, 999999999)] long RewardAmountMinor,
+    [Required, RegularExpression("^(USD|UAH)$")] string RewardCurrency);
 
 public sealed record UpdateLocationRequest(
     [Required, Range(-90, 90)] double Latitude,

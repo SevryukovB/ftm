@@ -16,7 +16,9 @@ public sealed record TaskCreatedEvent(
     Guid CreatedById,
     string CreatedByName,
     DateTime? Deadline,
-    int? ReminderOffsetMinutes);
+    int? ReminderOffsetMinutes,
+    long RewardAmountMinor,
+    string RewardCurrency);
 
 public sealed record TaskUpdatedEvent(
     Guid TaskId,
@@ -28,7 +30,9 @@ public sealed record TaskUpdatedEvent(
     string CreatedByName,
     string Status,
     DateTime? Deadline,
-    int? ReminderOffsetMinutes);
+    int? ReminderOffsetMinutes,
+    long RewardAmountMinor,
+    string RewardCurrency);
 
 public sealed record TaskStatusChangedEvent(
     Guid TaskId,
@@ -41,7 +45,9 @@ public sealed record TaskStatusChangedEvent(
     string CreatedByName,
     Guid ChangedById,
     DateTime? Deadline,
-    int? ReminderOffsetMinutes);
+    int? ReminderOffsetMinutes,
+    long RewardAmountMinor,
+    string RewardCurrency);
 
 public sealed record TaskReminderDueEvent(
     Guid TaskId,

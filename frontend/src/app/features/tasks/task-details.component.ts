@@ -14,6 +14,7 @@ import * as L from 'leaflet';
 import { AuthService } from '../../core/auth.service';
 import { TaskService } from '../../core/task.service';
 import { STATUS_META, TaskItem, TaskStatus } from '../../core/models';
+import { formatMoney } from '../../core/money';
 import { DEFAULT_ZOOM, createTileLayer, statusIcon } from '../../core/map-utils';
 import { TaskFormComponent } from './task-form.component';
 
@@ -42,6 +43,7 @@ import { TaskFormComponent } from './task-form.component';
             <div class="meta">
               <div class="meta-row"><span class="label">{{ 'tasks.description' | translate }}</span><span>{{ t.description || '—' }}</span></div>
               <div class="meta-row"><span class="label">{{ 'tasks.assignee' | translate }}</span><span>{{ t.assignee?.fullName || ('tasks.unassigned' | translate) }}</span></div>
+              <div class="meta-row"><span class="label">{{ 'tasks.reward' | translate }}</span><span class="reward-value">{{ money(t.rewardAmountMinor, t.rewardCurrency) }}</span></div>
               <div class="meta-row">
                 <span class="label">{{ 'tasks.deadline' | translate }}</span>
                 <span [class.overdue]="isOverdue(t)">{{ t.deadline ? (t.deadline | date: 'dd.MM.yyyy HH:mm') : '—' }}</span>
@@ -134,6 +136,7 @@ import { TaskFormComponent } from './task-form.component';
     .meta { display: flex; flex-direction: column; gap: .55rem; }
     .meta-row { display: grid; grid-template-columns: 8rem 1fr; gap: .5rem; }
     .label { color: var(--p-text-muted-color); }
+    .reward-value { font-weight: 800; }
     .overdue { color: var(--p-red-500); font-weight: 600; }
     .actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: 1.25rem; }
     .details-map { height: 320px; border-radius: 8px; }
@@ -530,6 +533,10 @@ export class TaskDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       case 1440: return this.translate.instant('tasks.form.reminder1d');
       default: return this.translate.instant('tasks.form.noReminder');
     }
+  }
+
+  money(amountMinor: number, currency: 'USD' | 'UAH'): string {
+    return formatMoney(amountMinor ?? 0, currency ?? 'UAH');
   }
 
   isOverdue(t: TaskItem): boolean {

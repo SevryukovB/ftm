@@ -6,11 +6,12 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../core/auth.service';
 import { NotificationService } from '../../core/notification.service';
 import { LanguageSelectComponent } from '../../shared/language-select.component';
+import { BalanceSummaryComponent } from '../../shared/balance-summary.component';
 
 @Component({
   selector: 'app-admin-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, ButtonModule, TooltipModule, TranslatePipe, LanguageSelectComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ButtonModule, TooltipModule, TranslatePipe, LanguageSelectComponent, BalanceSummaryComponent],
   template: `
     <div class="shell admin-shell">
       <div class="app-header admin-header">
@@ -18,6 +19,7 @@ import { LanguageSelectComponent } from '../../shared/language-select.component'
         <div class="header-spacer"></div>
         <div class="app-header-actions">
           <app-language-select />
+          <app-balance-summary />
           <a class="notification-link" routerLink="/notifications" routerLinkActive="active" [pTooltip]="'nav.notifications' | translate">
             <i class="pi pi-bell"></i>
             @if (unreadCount() > 0) {
@@ -45,6 +47,10 @@ import { LanguageSelectComponent } from '../../shared/language-select.component'
               <a routerLink="/users" routerLinkActive="active">
                 <i class="pi pi-users"></i>
                 <span>{{ 'nav.users' | translate }}</span>
+              </a>
+              <a routerLink="/statistics" routerLinkActive="active">
+                <i class="pi pi-chart-line"></i>
+                <span>{{ 'nav.statistics' | translate }}</span>
               </a>
             }
             @if (auth.isSuperAdmin()) {

@@ -15,6 +15,7 @@
     "organizations": "Organizations",
     "settings": "Settings",
     "signOut": "Sign out",
+    "statistics": "Statistics",
     "tasks": "Tasks",
     "users": "Users"
   },
@@ -63,6 +64,7 @@
       "assignee": "Assignee",
       "created": "Created",
       "deadline": "Deadline",
+      "reward": "Reward",
       "status": "Status",
       "title": "Title"
     },
@@ -78,6 +80,7 @@
     "location": "Location",
     "newTask": "New Task",
     "overdue": "Overdue",
+    "reward": "Reward",
     "searchPlaceholder": "Search title / description",
     "status": "Status",
     "title": "Tasks",
@@ -121,6 +124,9 @@
       "reminder1d": "1 day before",
       "reminder1h": "1 hour before",
       "reminder4h": "4 hours before",
+      "rewardAmount": "Reward amount",
+      "rewardAmountPlaceholder": "150.00",
+      "rewardCurrency": "Reward currency",
       "saveChanges": "Save changes",
       "title": "Title",
       "titlePlaceholder": "Inspect irrigation pump #3"
@@ -169,6 +175,37 @@
       "sms": "SMS",
       "telegram": "Telegram",
       "title": "Delivery"
+    }
+  },
+  "earnings": {
+    "balanceTooltip": "Current earned balance"
+  },
+  "statistics": {
+    "balanceUah": "UAH balance",
+    "balanceUsd": "USD balance",
+    "earnedUah": "UAH earned",
+    "earnedUsd": "USD earned",
+    "empty": "No earnings yet.",
+    "from": "From",
+    "loadFailed": "Failed to load statistics",
+    "subtitle": "Organization earnings, task rewards, and mocked payouts",
+    "title": "Statistics",
+    "to": "To",
+    "user": "User",
+    "verifiedTasks": "Verified tasks",
+    "history": {
+      "amount": "Amount",
+      "date": "Date",
+      "empty": "No verified task rewards for this period.",
+      "loading": "Loading history...",
+      "task": "Task"
+    },
+    "payout": {
+      "action": "Payout",
+      "failed": "Failed to complete payout.",
+      "paid": "Payout completed",
+      "pay": "Pay out",
+      "title": "Payout to {{user}}"
     }
   },
   "settings": {

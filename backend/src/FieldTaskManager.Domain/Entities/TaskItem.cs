@@ -11,6 +11,8 @@ public class TaskItem
     public double Longitude { get; set; }
     public DateTime? Deadline { get; set; }
     public int? ReminderOffsetMinutes { get; set; }
+    public long RewardAmountMinor { get; set; }
+    public string RewardCurrency { get; set; } = "UAH";
     public FieldTaskStatus Status { get; set; } = FieldTaskStatus.Created;
 
     public Guid OrganizationId { get; set; }

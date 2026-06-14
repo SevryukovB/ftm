@@ -13,6 +13,7 @@ import { OrganizationsComponent } from './features/organizations/organizations.c
 import { HomeRedirectComponent } from './features/home-redirect.component';
 import { NotificationsComponent } from './features/notifications/notifications.component';
 import { SettingsComponent } from './features/settings/settings.component';
+import { StatisticsComponent } from './features/statistics/statistics.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -27,6 +28,7 @@ export const routes: Routes = [
       { path: 'tasks', component: TaskListComponent, canActivate: [orgAdminGuard] },
       { path: 'tasks/:id', component: TaskDetailsComponent, canActivate: [orgAdminGuard] },
       { path: 'map', component: MapViewComponent, canActivate: [orgAdminGuard] },
+      { path: 'statistics', component: StatisticsComponent, canActivate: [orgAdminGuard] },
       { path: 'notifications', component: NotificationsComponent },
       { path: 'settings', component: SettingsComponent },
       { path: 'users', component: UsersComponent, canActivate: [orgAdminGuard] },

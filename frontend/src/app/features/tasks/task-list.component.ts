@@ -15,6 +15,7 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { TaskService } from '../../core/task.service';
 import { STATUS_LIST, STATUS_META, TaskItem, TaskStatus, User } from '../../core/models';
+import { formatMoney } from '../../core/money';
 import { TaskFormComponent } from './task-form.component';
 
 @Component({
@@ -61,6 +62,7 @@ import { TaskFormComponent } from './task-form.component';
             <th>{{ 'tasks.columns.title' | translate }}</th>
             <th style="width: 9rem">{{ 'tasks.columns.status' | translate }}</th>
             <th style="width: 14rem">{{ 'tasks.columns.assignee' | translate }}</th>
+            <th style="width: 10rem">{{ 'tasks.columns.reward' | translate }}</th>
             <th style="width: 13rem">{{ 'tasks.columns.deadline' | translate }}</th>
             <th style="width: 13rem">{{ 'tasks.columns.created' | translate }}</th>
           </tr>
@@ -77,6 +79,7 @@ import { TaskFormComponent } from './task-form.component';
               <p-tag [value]="statusLabel(task.status)" [severity]="severity(task.status)" />
             </td>
             <td>{{ task.assignee?.fullName || '—' }}</td>
+            <td class="reward-cell">{{ money(task.rewardAmountMinor, task.rewardCurrency) }}</td>
             <td [class.overdue]="isOverdue(task)">
               {{ task.deadline ? (task.deadline | date: 'dd.MM.yyyy HH:mm') : '—' }}
               @if (isOverdue(task)) { <i class="pi pi-exclamation-triangle" [pTooltip]="'tasks.overdue' | translate"></i> }
@@ -85,7 +88,7 @@ import { TaskFormComponent } from './task-form.component';
           </tr>
         </ng-template>
         <ng-template #emptymessage>
-          <tr><td colspan="5" class="empty">{{ 'tasks.empty' | translate }}</td></tr>
+          <tr><td colspan="6" class="empty">{{ 'tasks.empty' | translate }}</td></tr>
         </ng-template>
       </p-table>
     </div>
@@ -101,6 +104,7 @@ import { TaskFormComponent } from './task-form.component';
     .task-row { cursor: pointer; }
     .task-title { font-weight: 600; }
     .task-desc { color: var(--p-text-muted-color); font-size: .85rem; max-width: 32rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .reward-cell { font-weight: 700; white-space: nowrap; }
     .empty { text-align: center; padding: 2rem; color: var(--p-text-muted-color); }
     td.overdue { color: var(--p-red-500); font-weight: 600; }
     td.overdue .pi { margin-left: .35rem; }
@@ -182,6 +186,10 @@ export class TaskListComponent implements OnInit {
 
   statusLabel(status: TaskStatus): string {
     return this.translate.instant(`status.${status}`);
+  }
+
+  money(amountMinor: number, currency: 'USD' | 'UAH'): string {
+    return formatMoney(amountMinor ?? 0, currency ?? 'UAH');
   }
 
   isOverdue(task: TaskItem): boolean {

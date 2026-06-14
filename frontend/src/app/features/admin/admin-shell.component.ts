@@ -20,12 +20,14 @@ import { BalanceSummaryComponent } from '../../shared/balance-summary.component'
         <div class="app-header-actions">
           <app-language-select />
           <app-balance-summary />
-          <a class="notification-link" routerLink="/notifications" routerLinkActive="active" [pTooltip]="'nav.notifications' | translate">
-            <i class="pi pi-bell"></i>
-            @if (unreadCount() > 0) {
-              <span>{{ unreadCount() }}</span>
-            }
-          </a>
+          @if (auth.isAdmin()) {
+            <a class="notification-link" routerLink="/notifications" routerLinkActive="active" [pTooltip]="'nav.notifications' | translate">
+              <i class="pi pi-bell"></i>
+              @if (unreadCount() > 0) {
+                <span>{{ unreadCount() }}</span>
+              }
+            </a>
+          }
           <span class="user-name">{{ userName() }}</span>
           <span class="role-pill role-pill-admin">{{ roleKey() | translate }}</span>
           <p-button icon="pi pi-sign-out" severity="secondary" [text]="true" [pTooltip]="'nav.signOut' | translate" (onClick)="logout()" />
@@ -63,10 +65,12 @@ import { BalanceSummaryComponent } from '../../shared/balance-summary.component'
                 <span>{{ 'nav.organizations' | translate }}</span>
               </a>
             }
-            <a routerLink="/notifications" routerLinkActive="active">
-              <i class="pi pi-bell"></i>
-              <span>{{ 'nav.notifications' | translate }}</span>
-            </a>
+            @if (auth.isAdmin()) {
+              <a routerLink="/notifications" routerLinkActive="active">
+                <i class="pi pi-bell"></i>
+                <span>{{ 'nav.notifications' | translate }}</span>
+              </a>
+            }
             <a routerLink="/settings" routerLinkActive="active">
               <i class="pi pi-cog"></i>
               <span>{{ 'nav.settings' | translate }}</span>
@@ -118,7 +122,9 @@ export class AdminShellComponent {
   readonly unreadCount = computed(() => this.notifications.unreadCount());
 
   constructor(readonly auth: AuthService, private notifications: NotificationService) {
-    this.notifications.refreshUnreadCount();
+    if (this.auth.isAdmin()) {
+      this.notifications.refreshUnreadCount();
+    }
   }
 
   logout(): void {

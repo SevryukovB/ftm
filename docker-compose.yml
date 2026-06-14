@@ -85,9 +85,8 @@ services:
       Jwt__Key: ftm-pilot-super-secret-signing-key-change-me-0123456789
       Jwt__Issuer: FieldTaskManager
       Jwt__Audience: FieldTaskManager
-      Admin__Email: admin@ftm.local
-      Admin__Password: Admin123!
-      Admin__FullName: Administrator
+      SuperAdmin__Email: superadmin@ftm.local
+      SuperAdmin__Password: Admin123!
       Kafka__BootstrapServers: kafka:9092
       Kafka__TaskEventsTopic: task-events
       InternalApi__Key: ftm-internal-dev-key

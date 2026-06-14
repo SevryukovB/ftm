@@ -56,7 +56,7 @@ flowchart LR
 
 ```bash
 git clone <repo-url>
-cd field-task-manager
+cd ftm
 make run
 ```
 
@@ -64,7 +64,7 @@ make run
 
 ```bash
 git clone <repo-url>
-cd field-task-manager
+cd ftm
 docker compose up --build -d
 ```
 
@@ -73,12 +73,11 @@ docker compose up --build -d
 | Що | URL |
 | --- | --- |
 | Web-застосунок | http://localhost:8080 |
-| API / Swagger | http://localhost:5080/swagger |
 
 Тестовий Super Admin створюється автоматично під час першого запуску:
 
 ```text
-Email: admin@ftm.local
+Email: superadmin@ftm.local
 Password: Admin123!
 ```
 

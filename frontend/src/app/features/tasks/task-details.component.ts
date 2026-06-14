@@ -68,10 +68,23 @@ import { TaskFormComponent } from './task-form.component';
                 <span>{{ 'tasks.location' | translate }}</span>
                 @if (auth.isAdmin()) {
                   <small class="hint">{{ 'tasks.details.dragHint' | translate }}</small>
+                } @else if (auth.user()?.role === 'Worker') {
+                  <p-button
+                    [label]="'tasks.details.route' | translate"
+                    icon="pi pi-directions"
+                    size="small"
+                    [loading]="routing()"
+                    (onClick)="buildRoute()" />
                 }
               </div>
             </ng-template>
             <div id="details-map" class="details-map"></div>
+            @if (routeDistance()) {
+              <div class="route-summary">
+                <i class="pi pi-compass"></i>
+                <span>{{ 'tasks.details.routeDistance' | translate: { distance: routeDistance() } }}</span>
+              </div>
+            }
             @if (auth.isAdmin() && locationDirty()) {
               <div class="loc-actions">
                 <p-button [label]="'tasks.details.saveLocation' | translate" icon="pi pi-check" size="small" (onClick)="saveLocation()" />
@@ -115,6 +128,7 @@ import { TaskFormComponent } from './task-form.component';
     .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
     @media (max-width: 900px) { .details-grid { grid-template-columns: 1fr; } }
     .card-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+    .card-head span { overflow-wrap: anywhere; }
     .hint { color: var(--p-text-muted-color); font-weight: 400; }
     .meta { display: flex; flex-direction: column; gap: .55rem; }
     .meta-row { display: grid; grid-template-columns: 8rem 1fr; gap: .5rem; }
@@ -122,6 +136,15 @@ import { TaskFormComponent } from './task-form.component';
     .overdue { color: var(--p-red-500); font-weight: 600; }
     .actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: 1.25rem; }
     .details-map { height: 320px; border-radius: 8px; }
+    .route-summary {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      margin-top: .75rem;
+      color: var(--p-text-muted-color);
+      font-weight: 600;
+    }
+    .route-summary i { color: var(--p-primary-color); }
     .loc-actions { display: flex; gap: .5rem; margin-top: .75rem; }
     .comments { display: flex; flex-direction: column; gap: .75rem; margin-bottom: 1rem; }
     .comment { background: var(--p-surface-100); border-radius: 8px; padding: .65rem .85rem; }
@@ -150,12 +173,16 @@ export class TaskDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly loading = signal(true);
   readonly sending = signal(false);
   readonly locationDirty = signal(false);
+  readonly routing = signal(false);
+  readonly routeDistance = signal<string | null>(null);
 
   commentText = '';
 
   private id = '';
   private map?: L.Map;
   private marker?: L.Marker;
+  private routeLine?: L.Polyline;
+  private userLocationMarker?: L.CircleMarker;
   private viewReady = false;
 
   ngOnInit(): void {
@@ -179,6 +206,7 @@ export class TaskDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
         this.task.set(t);
         this.loading.set(false);
         this.locationDirty.set(false);
+        this.clearRoute();
         setTimeout(() => this.tryInitMap(), 0);
       },
       error: err => {
@@ -216,6 +244,142 @@ export class TaskDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     }).addTo(this.map);
 
     this.marker.on('dragend', () => this.locationDirty.set(true));
+  }
+
+  async buildRoute(): Promise<void> {
+    const t = this.task();
+    if (!t || !this.map || this.routing()) {
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      this.messages.add({
+        severity: 'error',
+        summary: this.translate.instant('common.error'),
+        detail: this.translate.instant('tasks.details.geolocationUnavailable')
+      });
+      return;
+    }
+
+    this.routing.set(true);
+    this.routeDistance.set(null);
+
+    try {
+      const current = await this.getCurrentPosition();
+      const start: L.LatLngTuple = [current.coords.latitude, current.coords.longitude];
+      const end: L.LatLngTuple = [t.latitude, t.longitude];
+      const route = await this.fetchRoadRoute(start, end);
+      this.drawRoute(route.points, start, route.distanceMeters);
+
+      if (route.isFallback) {
+        this.messages.add({
+          severity: 'warn',
+          summary: this.translate.instant('tasks.details.routeFallbackTitle'),
+          detail: this.translate.instant('tasks.details.routeFallback')
+        });
+      }
+    } catch (error) {
+      this.messages.add({
+        severity: 'error',
+        summary: this.translate.instant('common.error'),
+        detail: this.translate.instant('tasks.details.routeFailed')
+      });
+    } finally {
+      this.routing.set(false);
+    }
+  }
+
+  private getCurrentPosition(): Promise<GeolocationPosition> {
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        maximumAge: 30_000,
+        timeout: 15_000
+      });
+    });
+  }
+
+  private async fetchRoadRoute(
+    start: L.LatLngTuple,
+    end: L.LatLngTuple
+  ): Promise<{ points: L.LatLngTuple[]; distanceMeters: number; isFallback: boolean }> {
+    const [startLat, startLng] = start;
+    const [endLat, endLng] = end;
+    const url = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`;
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Route request failed with ${response.status}.`);
+      }
+
+      const data = await response.json() as {
+        routes?: Array<{
+          distance: number;
+          geometry: { coordinates: [number, number][] };
+        }>;
+      };
+      const route = data.routes?.[0];
+      if (!route?.geometry?.coordinates?.length) {
+        throw new Error('Route response did not contain geometry.');
+      }
+
+      return {
+        points: route.geometry.coordinates.map(([lng, lat]) => [lat, lng]),
+        distanceMeters: route.distance,
+        isFallback: false
+      };
+    } catch {
+      return {
+        points: [start, end],
+        distanceMeters: this.distanceMeters(start, end),
+        isFallback: true
+      };
+    }
+  }
+
+  private drawRoute(points: L.LatLngTuple[], start: L.LatLngTuple, distanceMeters: number): void {
+    if (!this.map) {
+      return;
+    }
+
+    this.clearRoute();
+    this.routeLine = L.polyline(points, {
+      color: '#2563eb',
+      weight: 5,
+      opacity: 0.85,
+      lineCap: 'round',
+      lineJoin: 'round'
+    }).addTo(this.map);
+
+    this.userLocationMarker = L.circleMarker(start, {
+      radius: 7,
+      color: '#ffffff',
+      weight: 2,
+      fillColor: '#2563eb',
+      fillOpacity: 1
+    }).addTo(this.map);
+
+    this.routeDistance.set(this.formatDistance(distanceMeters));
+    this.map.fitBounds(this.routeLine.getBounds(), { padding: [24, 24] });
+  }
+
+  private clearRoute(): void {
+    this.routeLine?.remove();
+    this.userLocationMarker?.remove();
+    this.routeLine = undefined;
+    this.userLocationMarker = undefined;
+    this.routeDistance.set(null);
+  }
+
+  private distanceMeters(start: L.LatLngTuple, end: L.LatLngTuple): number {
+    return L.latLng(start).distanceTo(L.latLng(end));
+  }
+
+  private formatDistance(meters: number): string {
+    return meters >= 1000
+      ? `${(meters / 1000).toFixed(1)} km`
+      : `${Math.round(meters)} m`;
   }
 
   saveLocation(): void {

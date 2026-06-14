@@ -90,10 +90,16 @@
     "details": {
       "back": "Back to tasks",
       "dragHint": "drag the marker, then save",
+      "geolocationUnavailable": "Geolocation is not available in this browser.",
       "loadFailed": "Failed to load task",
       "locationUpdated": "Location updated",
       "locationUpdateFailed": "Failed to update location",
       "notFound": "Task not found.",
+      "route": "Route",
+      "routeDistance": "Route distance: {{distance}}",
+      "routeFailed": "Could not get your location. Check browser location permissions.",
+      "routeFallback": "Road routing is unavailable, so a direct line was shown.",
+      "routeFallbackTitle": "Approximate route",
       "saveLocation": "Save location"
     },
     "form": {

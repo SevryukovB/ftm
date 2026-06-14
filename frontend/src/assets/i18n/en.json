@@ -13,6 +13,7 @@
     "map": "Map",
     "notifications": "Notifications",
     "organizations": "Organizations",
+    "settings": "Settings",
     "signOut": "Sign out",
     "tasks": "Tasks",
     "users": "Users"
@@ -135,7 +136,8 @@
     "loading": "Loading notifications...",
     "markAllRead": "Mark all read",
     "markRead": "Mark read",
-    "subtitle": "Inbox and delivery preferences",
+    "openTask": "Open task",
+    "subtitle": "Task updates and internal messages",
     "title": "Notifications",
     "channels": {
       "email": "Email",
@@ -147,6 +149,15 @@
       "telegram": "Telegram",
       "title": "Delivery"
     }
+  },
+  "settings": {
+    "notificationsHint": "Choose where task updates should be delivered.",
+    "phoneNumber": "Phone number",
+    "phonePlaceholder": "+1 555 010 1234",
+    "subtitle": "Profile preferences and delivery channels",
+    "telegramPlaceholder": "username",
+    "telegramUsername": "Telegram login",
+    "title": "Settings"
   },
   "users": {
     "active": "Active",

@@ -53,6 +53,14 @@ import { LanguageSelectComponent } from '../../shared/language-select.component'
                 <span>{{ 'nav.organizations' | translate }}</span>
               </a>
             }
+            <a routerLink="/notifications" routerLinkActive="active">
+              <i class="pi pi-bell"></i>
+              <span>{{ 'nav.notifications' | translate }}</span>
+            </a>
+            <a routerLink="/settings" routerLinkActive="active">
+              <i class="pi pi-cog"></i>
+              <span>{{ 'nav.settings' | translate }}</span>
+            </a>
           </nav>
         </aside>
         <main class="app-main">

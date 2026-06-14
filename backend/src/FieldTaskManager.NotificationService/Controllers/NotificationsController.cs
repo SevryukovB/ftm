@@ -84,7 +84,7 @@ public sealed class NotificationsController(NotificationDbContext context) : Con
     {
         var userId = User.GetUserId();
         var preferences = await GetOrCreatePreferencesAsync(userId, ct);
-        return new NotificationPreferenceDto(true, preferences.Email, preferences.Sms, preferences.Telegram);
+        return ToDto(preferences);
     }
 
     [HttpPut("preferences")]
@@ -97,11 +97,13 @@ public sealed class NotificationsController(NotificationDbContext context) : Con
         preferences.Internal = true;
         preferences.Email = request.Email;
         preferences.Sms = request.Sms;
+        preferences.PhoneNumber = request.Sms ? NormalizeOptional(request.PhoneNumber) : null;
         preferences.Telegram = request.Telegram;
+        preferences.TelegramUsername = request.Telegram ? NormalizeTelegram(request.TelegramUsername) : null;
         preferences.UpdatedAt = DateTime.UtcNow;
         await context.SaveChangesAsync(ct);
 
-        return new NotificationPreferenceDto(true, preferences.Email, preferences.Sms, preferences.Telegram);
+        return ToDto(preferences);
     }
 
     private async Task<NotificationPreference> GetOrCreatePreferencesAsync(Guid userId, CancellationToken ct)
@@ -116,5 +118,26 @@ public sealed class NotificationsController(NotificationDbContext context) : Con
         context.Preferences.Add(preferences);
         await context.SaveChangesAsync(ct);
         return preferences;
+    }
+
+    private static NotificationPreferenceDto ToDto(NotificationPreference preferences) =>
+        new(
+            true,
+            preferences.Email,
+            preferences.Sms,
+            preferences.PhoneNumber,
+            preferences.Telegram,
+            preferences.TelegramUsername);
+
+    private static string? NormalizeOptional(string? value)
+    {
+        var normalized = value?.Trim();
+        return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+    }
+
+    private static string? NormalizeTelegram(string? value)
+    {
+        var normalized = NormalizeOptional(value);
+        return normalized?.TrimStart('@');
     }
 }

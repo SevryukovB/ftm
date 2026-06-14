@@ -42,7 +42,7 @@ export class NotificationService {
   loadPreferences(): Observable<NotificationPreferences> {
     return this.http
       .get<NotificationPreferences>('/api/notifications/preferences')
-      .pipe(tap(preferences => this.preferencesSignal.set({ ...preferences, internal: true })));
+      .pipe(tap(preferences => this.preferencesSignal.set(normalizePreferences(preferences))));
   }
 
   updatePreferences(preferences: NotificationPreferences): Observable<NotificationPreferences> {
@@ -50,8 +50,19 @@ export class NotificationService {
       .put<NotificationPreferences>('/api/notifications/preferences', {
         email: preferences.email,
         sms: preferences.sms,
-        telegram: preferences.telegram
+        phoneNumber: preferences.phoneNumber,
+        telegram: preferences.telegram,
+        telegramUsername: preferences.telegramUsername
       })
-      .pipe(tap(updated => this.preferencesSignal.set({ ...updated, internal: true })));
+      .pipe(tap(updated => this.preferencesSignal.set(normalizePreferences(updated))));
   }
+}
+
+function normalizePreferences(preferences: NotificationPreferences): NotificationPreferences {
+  return {
+    ...preferences,
+    internal: true,
+    phoneNumber: preferences.phoneNumber ?? null,
+    telegramUsername: preferences.telegramUsername ?? null
+  };
 }

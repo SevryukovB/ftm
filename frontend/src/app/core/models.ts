@@ -60,7 +60,9 @@ export interface NotificationPreferences {
   internal: boolean;
   email: boolean;
   sms: boolean;
+  phoneNumber: string | null;
   telegram: boolean;
+  telegramUsername: string | null;
 }
 
 export const STATUS_META: Record<TaskStatus, { label: string; color: string; severity: 'info' | 'warn' | 'success' | 'secondary' }> = {

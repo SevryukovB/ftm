@@ -12,6 +12,7 @@ import { UsersComponent } from './features/users/users.component';
 import { OrganizationsComponent } from './features/organizations/organizations.component';
 import { HomeRedirectComponent } from './features/home-redirect.component';
 import { NotificationsComponent } from './features/notifications/notifications.component';
+import { SettingsComponent } from './features/settings/settings.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -27,6 +28,7 @@ export const routes: Routes = [
       { path: 'tasks/:id', component: TaskDetailsComponent, canActivate: [orgAdminGuard] },
       { path: 'map', component: MapViewComponent, canActivate: [orgAdminGuard] },
       { path: 'notifications', component: NotificationsComponent },
+      { path: 'settings', component: SettingsComponent },
       { path: 'users', component: UsersComponent, canActivate: [orgAdminGuard] },
       { path: 'organizations', component: OrganizationsComponent, canActivate: [superAdminGuard] }
     ]
@@ -41,7 +43,8 @@ export const routes: Routes = [
       { path: 'tasks', component: TaskListComponent },
       { path: 'tasks/:id', component: TaskDetailsComponent },
       { path: 'map', component: MapViewComponent },
-      { path: 'notifications', component: NotificationsComponent }
+      { path: 'notifications', component: NotificationsComponent },
+      { path: 'settings', component: SettingsComponent }
     ]
   },
   { path: '**', redirectTo: '' }

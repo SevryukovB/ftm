@@ -14,11 +14,15 @@ public sealed record NotificationPreferenceDto(
     bool Internal,
     bool Email,
     bool Sms,
-    bool Telegram);
+    string? PhoneNumber,
+    bool Telegram,
+    string? TelegramUsername);
 
 public sealed record UpdateNotificationPreferenceRequest(
     bool Email,
     bool Sms,
-    bool Telegram);
+    string? PhoneNumber,
+    bool Telegram,
+    string? TelegramUsername);
 
 public sealed record UnreadCountDto(int Count);

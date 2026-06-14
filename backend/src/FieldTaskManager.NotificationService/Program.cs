@@ -53,6 +53,10 @@ using (var scope = app.Services.CreateScope())
         try
         {
             await context.Database.EnsureCreatedAsync();
+            await context.Database.ExecuteSqlRawAsync("""
+                ALTER TABLE IF EXISTS notification_preferences ADD COLUMN IF NOT EXISTS "PhoneNumber" character varying(32) NULL;
+                ALTER TABLE IF EXISTS notification_preferences ADD COLUMN IF NOT EXISTS "TelegramUsername" character varying(64) NULL;
+                """);
             break;
         }
         catch (Exception ex) when (attempt < maxAttempts)

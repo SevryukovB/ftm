@@ -16,6 +16,8 @@ public sealed class TaskEventsConsumerHostedService(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        await Task.Yield();
+
         var config = new ConsumerConfig
         {
             BootstrapServers = options.Value.BootstrapServers,
@@ -194,12 +196,12 @@ public sealed class TaskEventsConsumerHostedService(
 
         if (preferences.Sms)
         {
-            notification.DeliveryAttempts.Add(CreateAttempt("Sms", "Mock SMS delivery."));
+            notification.DeliveryAttempts.Add(CreateAttempt("Sms", $"Mock SMS delivery to {preferences.PhoneNumber ?? "not configured"}."));
         }
 
         if (preferences.Telegram)
         {
-            notification.DeliveryAttempts.Add(CreateAttempt("Telegram", "Mock Telegram delivery."));
+            notification.DeliveryAttempts.Add(CreateAttempt("Telegram", $"Mock Telegram delivery to @{preferences.TelegramUsername ?? "not configured"}."));
         }
 
         foreach (var attempt in notification.DeliveryAttempts)

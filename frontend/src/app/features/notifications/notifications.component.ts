@@ -1,18 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
-import { CheckboxModule } from 'primeng/checkbox';
 import { TooltipModule } from 'primeng/tooltip';
-import { MessageService } from 'primeng/api';
-import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { AppNotification, NotificationPreferences } from '../../core/models';
+import { TranslatePipe } from '@ngx-translate/core';
+import { AppNotification } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 
 @Component({
   selector: 'app-notifications',
   standalone: true,
-  imports: [DatePipe, FormsModule, ButtonModule, CheckboxModule, TooltipModule, TranslatePipe],
+  imports: [DatePipe, RouterLink, ButtonModule, TooltipModule, TranslatePipe],
   template: `
     <div class="page notifications-page">
       <div class="page-header">
@@ -29,36 +27,6 @@ import { NotificationService } from '../../core/notification.service';
           [disabled]="!hasUnread()" />
       </div>
 
-      <section class="settings-panel">
-        <h2>{{ 'notifications.channels.title' | translate }}</h2>
-        <div class="channel-grid">
-          <label class="channel-option locked">
-            <p-checkbox [binary]="true" [ngModel]="true" [disabled]="true" inputId="internal-channel" />
-            <span>
-              <strong>{{ 'notifications.channels.internal' | translate }}</strong>
-              <small>{{ 'notifications.channels.internalHint' | translate }}</small>
-            </span>
-          </label>
-          <label class="channel-option">
-            <p-checkbox [(ngModel)]="preferences.email" [binary]="true" inputId="email-channel" />
-            <span>{{ 'notifications.channels.email' | translate }}</span>
-          </label>
-          <label class="channel-option">
-            <p-checkbox [(ngModel)]="preferences.sms" [binary]="true" inputId="sms-channel" />
-            <span>{{ 'notifications.channels.sms' | translate }}</span>
-          </label>
-          <label class="channel-option">
-            <p-checkbox [(ngModel)]="preferences.telegram" [binary]="true" inputId="telegram-channel" />
-            <span>{{ 'notifications.channels.telegram' | translate }}</span>
-          </label>
-        </div>
-        <p-button
-          icon="pi pi-save"
-          [label]="'common.save' | translate"
-          (onClick)="savePreferences()"
-          [loading]="savingPreferences" />
-      </section>
-
       <section class="notification-list">
         @if (loading) {
           <div class="empty-state muted">{{ 'notifications.loading' | translate }}</div>
@@ -74,6 +42,12 @@ import { NotificationService } from '../../core/notification.service';
                   <time>{{ notification.createdAt | date: 'short' }}</time>
                 </div>
                 <p>{{ notification.message }}</p>
+                @if (taskLink(notification); as link) {
+                  <a class="task-link" [routerLink]="link">
+                    <i class="pi pi-arrow-right"></i>
+                    <span>{{ 'notifications.openTask' | translate }}</span>
+                  </a>
+                }
               </div>
               <p-button
                 icon="pi pi-check"
@@ -95,41 +69,6 @@ import { NotificationService } from '../../core/notification.service';
     h1, h2, h3, p { margin: 0; }
     h1 { font-size: 1.75rem; }
     h2 { font-size: 1.05rem; }
-    .settings-panel {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 1rem;
-      border: 1px solid var(--p-content-border-color, #e5e7eb);
-      border-radius: 8px;
-      background: var(--p-content-background, #fff);
-    }
-    .channel-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(9rem, 1fr));
-      gap: 0.75rem;
-      flex: 1 1 auto;
-      min-width: 0;
-    }
-    .channel-option {
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      min-height: 3rem;
-      padding: 0.7rem;
-      border: 1px solid var(--p-content-border-color, #e5e7eb);
-      border-radius: 8px;
-      background: var(--p-surface-0, #fff);
-      font-weight: 600;
-    }
-    .channel-option small {
-      display: block;
-      margin-top: 0.15rem;
-      color: var(--p-text-muted-color, #6b7280);
-      font-weight: 500;
-      line-height: 1.25;
-    }
-    .channel-option.locked { background: var(--p-surface-50, #f9fafb); }
     .notification-list { display: flex; flex-direction: column; gap: 0.6rem; }
     .notification-row {
       display: grid;
@@ -175,6 +114,16 @@ import { NotificationService } from '../../core/notification.service';
       line-height: 1.35;
       overflow-wrap: anywhere;
     }
+    .task-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-top: 0.45rem;
+      color: var(--p-primary-color, #059669);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .task-link:hover { text-decoration: underline; }
     .empty-state {
       min-height: 8rem;
       display: grid;
@@ -184,39 +133,21 @@ import { NotificationService } from '../../core/notification.service';
       background: var(--p-content-background, #fff);
     }
     @media (max-width: 900px) {
-      .settings-panel { align-items: stretch; flex-direction: column; }
-      .channel-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
       .page-header { align-items: stretch; flex-direction: column; }
     }
     @media (max-width: 560px) {
-      .channel-grid { grid-template-columns: 1fr; }
       .notification-topline { align-items: flex-start; flex-direction: column; gap: 0.25rem; }
     }
   `]
 })
 export class NotificationsComponent implements OnInit {
   notifications: AppNotification[] = [];
-  preferences: NotificationPreferences = {
-    internal: true,
-    email: false,
-    sms: false,
-    telegram: false
-  };
   loading = true;
-  savingPreferences = false;
 
-  constructor(
-    private notificationService: NotificationService,
-    private messages: MessageService,
-    private translate: TranslateService
-  ) {}
+  constructor(private notificationService: NotificationService) {}
 
   ngOnInit(): void {
     this.loadNotifications();
-    this.notificationService.loadPreferences().subscribe({
-      next: preferences => this.preferences = { ...preferences, internal: true },
-      error: () => this.preferences.internal = true
-    });
   }
 
   hasUnread(): boolean {
@@ -249,27 +180,13 @@ export class NotificationsComponent implements OnInit {
     });
   }
 
-  savePreferences(): void {
-    this.savingPreferences = true;
-    this.notificationService.updatePreferences({ ...this.preferences, internal: true }).subscribe({
-      next: preferences => {
-        this.preferences = { ...preferences, internal: true };
-        this.savingPreferences = false;
-        this.messages.add({
-          severity: 'success',
-          summary: this.translate.instant('common.saved'),
-          detail: this.translate.instant('notifications.channels.saved')
-        });
-      },
-      error: () => {
-        this.savingPreferences = false;
-        this.messages.add({
-          severity: 'error',
-          summary: this.translate.instant('common.error'),
-          detail: this.translate.instant('notifications.channels.saveFailed')
-        });
-      }
-    });
+  taskLink(notification: AppNotification): string[] | null {
+    try {
+      const payload = JSON.parse(notification.payloadJson) as { taskId?: string };
+      return payload.taskId ? ['/tasks', payload.taskId] : null;
+    } catch {
+      return null;
+    }
   }
 
   private loadNotifications(): void {

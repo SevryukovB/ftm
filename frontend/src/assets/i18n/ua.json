@@ -13,6 +13,7 @@
     "map": "Мапа",
     "notifications": "Сповіщення",
     "organizations": "Організації",
+    "settings": "Налаштування",
     "signOut": "Вийти",
     "tasks": "Завдання",
     "users": "Користувачі"
@@ -135,7 +136,8 @@
     "loading": "Завантаження сповіщень...",
     "markAllRead": "Позначити всі прочитаними",
     "markRead": "Позначити прочитаним",
-    "subtitle": "Вхідні сповіщення та канали доставки",
+    "openTask": "Відкрити завдання",
+    "subtitle": "Оновлення по завданнях та внутрішні повідомлення",
     "title": "Сповіщення",
     "channels": {
       "email": "Email",
@@ -147,6 +149,15 @@
       "telegram": "Telegram",
       "title": "Доставка"
     }
+  },
+  "settings": {
+    "notificationsHint": "Оберіть, куди доставляти оновлення по завданнях.",
+    "phoneNumber": "Номер телефону",
+    "phonePlaceholder": "+380 67 000 00 00",
+    "subtitle": "Персональні налаштування та канали доставки",
+    "telegramPlaceholder": "username",
+    "telegramUsername": "Логін Telegram",
+    "title": "Налаштування"
   },
   "users": {
     "active": "Активний",

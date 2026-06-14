@@ -27,6 +27,8 @@ public sealed class NotificationDbContext(DbContextOptions<NotificationDbContext
         {
             builder.ToTable("notification_preferences");
             builder.HasKey(p => p.UserId);
+            builder.Property(p => p.PhoneNumber).HasMaxLength(32);
+            builder.Property(p => p.TelegramUsername).HasMaxLength(64);
         });
 
         modelBuilder.Entity<DeliveryAttempt>(builder =>

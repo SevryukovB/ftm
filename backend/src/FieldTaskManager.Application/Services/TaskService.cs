@@ -306,6 +306,17 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
         };
 
         unitOfWork.Comments.Add(comment);
+        AddTaskEvent("TaskCommentAdded", task, new TaskCommentAddedEvent(
+            task.Id,
+            task.Title,
+            task.OrganizationId,
+            task.AssigneeId,
+            task.Assignee?.FullName,
+            task.CreatedById,
+            task.CreatedBy.FullName,
+            author.Id,
+            author.FullName,
+            comment.Text));
         await unitOfWork.SaveChangesAsync(ct);
 
         return Result.Success(comment.ToDto());

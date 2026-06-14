@@ -73,8 +73,8 @@ public sealed class TaskEventsConsumerHostedService(
             return;
         }
 
-        var notification = BuildNotification(envelope);
-        if (notification is not null)
+        var notifications = BuildNotifications(envelope);
+        foreach (var notification in notifications)
         {
             var preferences = await GetOrCreatePreferencesAsync(context, notification.UserId, ct);
             AddMockDeliveries(notification, preferences);
@@ -90,7 +90,7 @@ public sealed class TaskEventsConsumerHostedService(
         await context.SaveChangesAsync(ct);
     }
 
-    private static Notification? BuildNotification(TaskEventEnvelope envelope)
+    private static IReadOnlyList<Notification> BuildNotifications(TaskEventEnvelope envelope)
     {
         var payload = envelope.Payload;
         var taskId = payload.GetProperty("taskId").GetGuid();
@@ -98,32 +98,64 @@ public sealed class TaskEventsConsumerHostedService(
 
         return envelope.Type switch
         {
-            "TaskCreated" => BuildForOptionalRecipient(
+            "TaskCreated" => ToList(BuildForOptionalRecipient(
                 payload,
                 "assigneeId",
                 "Task assigned",
                 $"New task assigned: {title}",
                 "TaskCreated",
                 taskId,
-                envelope.Payload.GetRawText()),
-            "TaskDone" => BuildForRequiredRecipient(
+                envelope.Payload.GetRawText())),
+            "TaskDone" => [BuildForRequiredRecipient(
                 payload,
                 "createdById",
                 "Task completed",
                 $"Task is ready for verification: {title}",
                 "TaskDone",
                 taskId,
-                envelope.Payload.GetRawText()),
-            "TaskVerified" => BuildForOptionalRecipient(
+                envelope.Payload.GetRawText())],
+            "TaskVerified" => ToList(BuildForOptionalRecipient(
                 payload,
                 "assigneeId",
                 "Task verified",
                 $"Task was verified and closed: {title}",
                 "TaskVerified",
                 taskId,
-                envelope.Payload.GetRawText()),
-            _ => null
+                envelope.Payload.GetRawText())),
+            "TaskCommentAdded" => BuildCommentNotifications(payload, taskId, title, envelope.Payload.GetRawText()),
+            _ => []
         };
+    }
+
+    private static IReadOnlyList<Notification> BuildCommentNotifications(
+        JsonElement payload,
+        Guid taskId,
+        string taskTitle,
+        string payloadJson)
+    {
+        var authorId = payload.GetProperty("authorId").GetGuid();
+        var authorName = payload.GetProperty("authorName").GetString() ?? "Someone";
+        var commentText = payload.GetProperty("commentText").GetString() ?? string.Empty;
+        var shortComment = commentText.Length <= 120 ? commentText : $"{commentText[..120]}...";
+
+        var recipientIds = new HashSet<Guid>();
+        if (payload.TryGetProperty("assigneeId", out var assigneeId) && assigneeId.ValueKind != JsonValueKind.Null)
+        {
+            recipientIds.Add(assigneeId.GetGuid());
+        }
+
+        recipientIds.Add(payload.GetProperty("createdById").GetGuid());
+        recipientIds.Remove(authorId);
+
+        return recipientIds
+            .Select(userId => CreateNotification(
+                userId,
+                "New comment",
+                $"{authorName} commented on {taskTitle}: {shortComment}",
+                "TaskCommentAdded",
+                taskId,
+                payloadJson))
+            .ToList();
     }
 
     private static Notification? BuildForOptionalRecipient(
@@ -168,6 +200,9 @@ public sealed class TaskEventsConsumerHostedService(
             Message = message,
             PayloadJson = payloadJson
         };
+
+    private static IReadOnlyList<Notification> ToList(Notification? notification) =>
+        notification is null ? [] : [notification];
 
     private static async Task<NotificationPreference> GetOrCreatePreferencesAsync(
         NotificationDbContext context,

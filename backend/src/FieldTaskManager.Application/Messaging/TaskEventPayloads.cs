@@ -28,3 +28,15 @@ public sealed record TaskStatusChangedEvent(
     string CreatedByName,
     Guid ChangedById,
     DateTime? Deadline);
+
+public sealed record TaskCommentAddedEvent(
+    Guid TaskId,
+    string Title,
+    Guid OrganizationId,
+    Guid? AssigneeId,
+    string? AssigneeName,
+    Guid CreatedById,
+    string CreatedByName,
+    Guid AuthorId,
+    string AuthorName,
+    string CommentText);

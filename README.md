@@ -66,7 +66,7 @@ flowchart LR
 - JWT-автентифікація та role-based access control.
 - Автоматичне створення Super Admin під час першого запуску.
 - Управління організаціями, користувачами, завданнями та коментарями.
-- Workflow задач: `Created -> InProgress -> Done -> Verified`.
+- Workflow задач: `Created -> InProgress -> Done -> Verified`, також задача може перейти в `NotCompleted`.
 - Повернення задачі в роботу адміністратором організації.
 - Outbox-публікація task events у Kafka.
 
@@ -88,7 +88,7 @@ flowchart LR
 - Читає task events із Kafka.
 - Планує нагадування по дедлайнах задач.
 - Зберігає scheduled jobs у MongoDB.
-- Через internal API ініціює reminder-події.
+- Після завершення дедлайну автоматично переводить невиконану задачу в `NotCompleted`.
 
 ### Earnings Service
 

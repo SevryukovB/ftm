@@ -135,7 +135,11 @@
   },
   "map": {
     "allStatuses": "Усі статуси",
-    "openTask": "Відкрити завдання"
+    "clearDates": "Очистити діапазон дат",
+    "openTask": "Відкрити завдання",
+    "updatedFrom": "Оновлено з",
+    "updatedRange": "Діапазон дат оновлення",
+    "updatedTo": "Оновлено до"
   },
   "notifications": {
     "empty": "Сповіщень поки немає.",

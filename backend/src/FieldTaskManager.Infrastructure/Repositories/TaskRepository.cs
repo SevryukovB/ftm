@@ -42,6 +42,16 @@ public sealed class TaskRepository(AppDbContext context) : Repository<TaskItem>(
                 EF.Functions.ILike(t.Description, pattern));
         }
 
-        return await query.OrderByDescending(t => t.CreatedAt).ToListAsync(ct);
+        if (filter.UpdatedFrom is not null)
+        {
+            query = query.Where(t => t.UpdatedAt >= filter.UpdatedFrom.Value);
+        }
+
+        if (filter.UpdatedTo is not null)
+        {
+            query = query.Where(t => t.UpdatedAt < filter.UpdatedTo.Value);
+        }
+
+        return await query.OrderByDescending(t => t.UpdatedAt).ToListAsync(ct);
     }
 }

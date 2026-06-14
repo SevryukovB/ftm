@@ -43,6 +43,8 @@ export interface TaskFilter {
   status?: TaskStatus | null;
   assigneeId?: string | null;
   search?: string | null;
+  updatedFrom?: string | null;
+  updatedTo?: string | null;
 }
 
 export interface AppNotification {

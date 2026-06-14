@@ -135,7 +135,11 @@
   },
   "map": {
     "allStatuses": "All statuses",
-    "openTask": "Open task"
+    "clearDates": "Clear date range",
+    "openTask": "Open task",
+    "updatedFrom": "Updated from",
+    "updatedRange": "Updated date range",
+    "updatedTo": "Updated to"
   },
   "notifications": {
     "empty": "No notifications yet.",

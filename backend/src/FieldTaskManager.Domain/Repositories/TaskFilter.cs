@@ -5,4 +5,6 @@ namespace FieldTaskManager.Domain.Repositories;
 public sealed record TaskFilter(
     FieldTaskStatus? Status = null,
     Guid? AssigneeId = null,
-    string? Search = null);
+    string? Search = null,
+    DateTime? UpdatedFrom = null,
+    DateTime? UpdatedTo = null);

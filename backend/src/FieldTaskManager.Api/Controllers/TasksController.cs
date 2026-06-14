@@ -18,8 +18,10 @@ public sealed class TasksController(ITaskService taskService) : ControllerBase
         [FromQuery] FieldTaskStatus? status,
         [FromQuery] Guid? assigneeId,
         [FromQuery] string? search,
+        [FromQuery] DateTime? updatedFrom,
+        [FromQuery] DateTime? updatedTo,
         CancellationToken ct) =>
-        (await taskService.SearchAsync(new TaskFilter(status, assigneeId, search), User.ToCurrentUser(), ct)).ToActionResult(this);
+        (await taskService.SearchAsync(new TaskFilter(status, assigneeId, search, updatedFrom, updatedTo), User.ToCurrentUser(), ct)).ToActionResult(this);
 
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<TaskDto>> Get(Guid id, CancellationToken ct) =>

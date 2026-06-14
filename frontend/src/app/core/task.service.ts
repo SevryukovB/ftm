@@ -12,6 +12,8 @@ export class TaskService {
     if (filter.status) params = params.set('status', filter.status);
     if (filter.assigneeId) params = params.set('assigneeId', filter.assigneeId);
     if (filter.search?.trim()) params = params.set('search', filter.search.trim());
+    if (filter.updatedFrom) params = params.set('updatedFrom', filter.updatedFrom);
+    if (filter.updatedTo) params = params.set('updatedTo', filter.updatedTo);
     return this.http.get<TaskItem[]>('/api/tasks', { params });
   }
 

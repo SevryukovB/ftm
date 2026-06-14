@@ -2,6 +2,8 @@ import { AfterViewInit, Component, OnDestroy, OnInit, computed, inject, signal }
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SelectModule } from 'primeng/select';
+import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
@@ -14,17 +16,37 @@ import { DEFAULT_CENTER, DEFAULT_ZOOM, createTileLayer, statusIcon } from '../..
 @Component({
   selector: 'app-map-view',
   standalone: true,
-  imports: [CommonModule, FormsModule, SelectModule, TranslatePipe],
+  imports: [CommonModule, FormsModule, SelectModule, ButtonModule, TooltipModule, TranslatePipe],
   template: `
     <div class="page map-page">
       <div class="map-toolbar">
         <h2 class="title">{{ 'nav.map' | translate }}</h2>
-        <p-select [options]="statusOptions()"
-                  [ngModel]="status()"
-                  (ngModelChange)="status.set($event); render()"
-                  optionLabel="label" optionValue="value"
-                  [placeholder]="'map.allStatuses' | translate" [showClear]="true"
-                  styleClass="filter-select" />
+        <div class="map-filters">
+          <p-select [options]="statusOptions()"
+                    [ngModel]="status()"
+                    (ngModelChange)="status.set($event); render()"
+                    optionLabel="label" optionValue="value"
+                    [placeholder]="'map.allStatuses' | translate" [showClear]="true"
+                    styleClass="filter-select" />
+          <div class="date-filters" [attr.aria-label]="'map.updatedRange' | translate">
+            <label>
+              <span>{{ 'map.updatedFrom' | translate }}</span>
+              <input type="date" [(ngModel)]="updatedFrom" (ngModelChange)="loadTasks()" />
+            </label>
+            <label>
+              <span>{{ 'map.updatedTo' | translate }}</span>
+              <input type="date" [(ngModel)]="updatedTo" (ngModelChange)="loadTasks()" />
+            </label>
+            <p-button
+              icon="pi pi-filter-slash"
+              severity="secondary"
+              [text]="true"
+              [rounded]="true"
+              [pTooltip]="'map.clearDates' | translate"
+              (onClick)="clearDateFilters()"
+              [disabled]="!updatedFrom && !updatedTo" />
+          </div>
+        </div>
       </div>
 
       <div class="map-wrap">
@@ -42,9 +64,60 @@ import { DEFAULT_CENTER, DEFAULT_ZOOM, createTileLayer, statusIcon } from '../..
   `,
   styles: [`
     .map-page { display: flex; flex-direction: column; height: calc(100vh - 5.5rem); }
-    .map-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: .75rem; gap: .75rem; flex-wrap: wrap; }
+    .map-toolbar {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: end;
+      margin-bottom: .75rem;
+      gap: .75rem;
+    }
     .title { margin: 0; }
+    .map-filters {
+      display: flex;
+      align-items: end;
+      justify-content: flex-end;
+      gap: .75rem;
+      justify-self: end;
+      min-width: 0;
+    }
     :host ::ng-deep .filter-select { min-width: 12rem; }
+    :host ::ng-deep .map-toolbar > p-select {
+      justify-self: end;
+      margin-left: auto;
+    }
+    :host ::ng-deep .map-toolbar > p-select + .date-filters {
+      justify-self: end;
+    }
+    .date-filters {
+      display: flex;
+      align-items: end;
+      gap: .55rem;
+      flex-wrap: wrap;
+    }
+    .date-filters label {
+      display: flex;
+      flex-direction: column;
+      gap: .25rem;
+      color: var(--p-text-muted-color);
+      font-size: .78rem;
+      font-weight: 700;
+    }
+    .date-filters input {
+      min-width: 9rem;
+      height: 2.5rem;
+      padding: 0 .65rem;
+      border: 1px solid var(--p-content-border-color, #d1d5db);
+      border-radius: 6px;
+      background: var(--p-content-background, #fff);
+      color: var(--p-text-color, #1f2937);
+      font: inherit;
+    }
+    @media (max-width: 760px) {
+      .map-toolbar { display: flex; align-items: stretch; flex-direction: column; }
+      .map-filters { align-items: stretch; flex-direction: column; justify-self: stretch; }
+      :host ::ng-deep .filter-select { width: 100%; }
+      .date-filters { align-items: end; }
+    }
     .map-wrap { position: relative; flex: 1; min-height: 420px; }
     .tasks-map { position: absolute; inset: 0; border-radius: 10px; }
     .legend-item { display: flex; align-items: center; gap: .45rem; }
@@ -57,6 +130,8 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly translate = inject(TranslateService);
 
   readonly status = signal<TaskStatus | null>(null);
+  updatedFrom = '';
+  updatedTo = '';
   readonly statusList = STATUS_LIST;
   readonly meta = STATUS_META;
   readonly statusOptions = computed(() => {
@@ -71,14 +146,7 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     this.langSub = this.translate.onLangChange.subscribe(() => this.render());
-    this.taskService.list({}).subscribe({
-      next: tasks => { this.tasks = tasks; this.render(); },
-      error: err => this.messages.add({
-        severity: 'error',
-        summary: this.translate.instant('common.error'),
-        detail: this.translate.instant('tasks.loadFailed')
-      })
-    });
+    this.loadTasks();
   }
 
   ngAfterViewInit(): void {
@@ -93,6 +161,26 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     this.langSub?.unsubscribe();
     this.map?.remove();
+  }
+
+  loadTasks(): void {
+    this.taskService.list({
+      updatedFrom: this.toDateTimeQuery(this.updatedFrom, false),
+      updatedTo: this.toDateTimeQuery(this.updatedTo, true)
+    }).subscribe({
+      next: tasks => { this.tasks = tasks; this.render(); },
+      error: err => this.messages.add({
+        severity: 'error',
+        summary: this.translate.instant('common.error'),
+        detail: this.translate.instant('tasks.loadFailed')
+      })
+    });
+  }
+
+  clearDateFilters(): void {
+    this.updatedFrom = '';
+    this.updatedTo = '';
+    this.loadTasks();
   }
 
   render(): void {
@@ -137,5 +225,23 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   statusLabel(status: TaskStatus): string {
     return this.translate.instant(`status.${status}`);
+  }
+
+  private toDateTimeQuery(value: string, exclusiveNextDay: boolean): string | null {
+    if (!value) {
+      return null;
+    }
+
+    const [year, month, day] = value.split('-').map(Number);
+    if (!year || !month || !day) {
+      return null;
+    }
+
+    const date = new Date(year, month - 1, day);
+    if (exclusiveNextDay) {
+      date.setDate(date.getDate() + 1);
+    }
+
+    return date.toISOString();
   }
 }

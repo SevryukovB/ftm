@@ -1,0 +1,221 @@
+using System.Text.Json;
+using Confluent.Kafka;
+using FieldTaskManager.NotificationService.Entities;
+using FieldTaskManager.NotificationService.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+
+namespace FieldTaskManager.NotificationService.Messaging;
+
+public sealed class TaskEventsConsumerHostedService(
+    IServiceScopeFactory scopeFactory,
+    IOptions<KafkaOptions> options,
+    ILogger<TaskEventsConsumerHostedService> logger) : BackgroundService
+{
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        var config = new ConsumerConfig
+        {
+            BootstrapServers = options.Value.BootstrapServers,
+            GroupId = options.Value.ConsumerGroup,
+            AutoOffsetReset = AutoOffsetReset.Earliest,
+            EnableAutoCommit = false,
+            AllowAutoCreateTopics = true
+        };
+
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            using var consumer = new ConsumerBuilder<string, string>(config).Build();
+            try
+            {
+                consumer.Subscribe(options.Value.TaskEventsTopic);
+
+                while (!stoppingToken.IsCancellationRequested)
+                {
+                    var result = consumer.Consume(stoppingToken);
+                    await ProcessAsync(result.Message.Value, stoppingToken);
+                    consumer.Commit(result);
+                }
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Task event consumer failed. Reconnecting...");
+                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+            }
+            finally
+            {
+                consumer.Close();
+            }
+        }
+    }
+
+    private async Task ProcessAsync(string message, CancellationToken ct)
+    {
+        var envelope = JsonSerializer.Deserialize<TaskEventEnvelope>(message, JsonOptions);
+        if (envelope is null)
+        {
+            return;
+        }
+
+        using var scope = scopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<NotificationDbContext>();
+
+        if (await context.ProcessedEvents.AnyAsync(e => e.EventId == envelope.EventId, ct))
+        {
+            return;
+        }
+
+        var notification = BuildNotification(envelope);
+        if (notification is not null)
+        {
+            var preferences = await GetOrCreatePreferencesAsync(context, notification.UserId, ct);
+            AddMockDeliveries(notification, preferences);
+            context.Notifications.Add(notification);
+        }
+
+        context.ProcessedEvents.Add(new ProcessedEvent
+        {
+            EventId = envelope.EventId,
+            Type = envelope.Type
+        });
+
+        await context.SaveChangesAsync(ct);
+    }
+
+    private static Notification? BuildNotification(TaskEventEnvelope envelope)
+    {
+        var payload = envelope.Payload;
+        var taskId = payload.GetProperty("taskId").GetGuid();
+        var title = payload.GetProperty("title").GetString() ?? "Task";
+
+        return envelope.Type switch
+        {
+            "TaskCreated" => BuildForOptionalRecipient(
+                payload,
+                "assigneeId",
+                "Task assigned",
+                $"New task assigned: {title}",
+                "TaskCreated",
+                taskId,
+                envelope.Payload.GetRawText()),
+            "TaskDone" => BuildForRequiredRecipient(
+                payload,
+                "createdById",
+                "Task completed",
+                $"Task is ready for verification: {title}",
+                "TaskDone",
+                taskId,
+                envelope.Payload.GetRawText()),
+            "TaskVerified" => BuildForOptionalRecipient(
+                payload,
+                "assigneeId",
+                "Task verified",
+                $"Task was verified and closed: {title}",
+                "TaskVerified",
+                taskId,
+                envelope.Payload.GetRawText()),
+            _ => null
+        };
+    }
+
+    private static Notification? BuildForOptionalRecipient(
+        JsonElement payload,
+        string property,
+        string title,
+        string message,
+        string type,
+        Guid taskId,
+        string payloadJson)
+    {
+        if (!payload.TryGetProperty(property, out var value) || value.ValueKind == JsonValueKind.Null)
+        {
+            return null;
+        }
+
+        return CreateNotification(value.GetGuid(), title, message, type, taskId, payloadJson);
+    }
+
+    private static Notification BuildForRequiredRecipient(
+        JsonElement payload,
+        string property,
+        string title,
+        string message,
+        string type,
+        Guid taskId,
+        string payloadJson) =>
+        CreateNotification(payload.GetProperty(property).GetGuid(), title, message, type, taskId, payloadJson);
+
+    private static Notification CreateNotification(
+        Guid userId,
+        string title,
+        string message,
+        string type,
+        Guid taskId,
+        string payloadJson) =>
+        new()
+        {
+            UserId = userId,
+            Type = type,
+            Title = title,
+            Message = message,
+            PayloadJson = payloadJson
+        };
+
+    private static async Task<NotificationPreference> GetOrCreatePreferencesAsync(
+        NotificationDbContext context,
+        Guid userId,
+        CancellationToken ct)
+    {
+        var preferences = await context.Preferences.FindAsync([userId], ct);
+        if (preferences is not null)
+        {
+            return preferences;
+        }
+
+        preferences = new NotificationPreference { UserId = userId, Internal = true };
+        context.Preferences.Add(preferences);
+        return preferences;
+    }
+
+    private void AddMockDeliveries(Notification notification, NotificationPreference preferences)
+    {
+        notification.DeliveryAttempts.Add(CreateAttempt("Internal", "Stored in app notification inbox."));
+
+        if (preferences.Email)
+        {
+            notification.DeliveryAttempts.Add(CreateAttempt("Email", "Mock email delivery."));
+        }
+
+        if (preferences.Sms)
+        {
+            notification.DeliveryAttempts.Add(CreateAttempt("Sms", "Mock SMS delivery."));
+        }
+
+        if (preferences.Telegram)
+        {
+            notification.DeliveryAttempts.Add(CreateAttempt("Telegram", "Mock Telegram delivery."));
+        }
+
+        foreach (var attempt in notification.DeliveryAttempts)
+        {
+            logger.LogInformation(
+                "Mock notification delivery via {Channel} to user {UserId}: {Title}",
+                attempt.Channel,
+                notification.UserId,
+                notification.Title);
+        }
+    }
+
+    private static DeliveryAttempt CreateAttempt(string channel, string details) =>
+        new()
+        {
+            Channel = channel,
+            Details = details
+        };
+}

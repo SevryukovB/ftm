@@ -176,3 +176,57 @@ html, body {
   font-size: 0.8rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
+
+@media (max-width: 760px) {
+  .page {
+    max-width: 100%;
+    padding: 1rem;
+  }
+
+  .app-header {
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+
+  .app-header-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.45rem;
+    min-width: 0;
+  }
+
+  .user-name {
+    max-width: 7rem;
+  }
+
+  .role-pill {
+    display: none;
+  }
+
+  .app-frame {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: auto;
+  }
+
+  .app-sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--p-content-border-color, #e5e7eb);
+    padding: 0.6rem 0.75rem;
+  }
+
+  .sidebar-title {
+    display: none;
+  }
+
+  .side-nav {
+    flex-direction: row;
+    gap: 0.45rem;
+    overflow-x: auto;
+    padding-bottom: 0.1rem;
+  }
+
+  .side-nav a {
+    flex: 0 0 auto;
+    min-height: 2.4rem;
+  }
+}

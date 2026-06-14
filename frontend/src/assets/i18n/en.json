@@ -11,6 +11,7 @@
   },
   "nav": {
     "map": "Map",
+    "notifications": "Notifications",
     "organizations": "Organizations",
     "signOut": "Sign out",
     "tasks": "Tasks",
@@ -128,6 +129,24 @@
   "map": {
     "allStatuses": "All statuses",
     "openTask": "Open task"
+  },
+  "notifications": {
+    "empty": "No notifications yet.",
+    "loading": "Loading notifications...",
+    "markAllRead": "Mark all read",
+    "markRead": "Mark read",
+    "subtitle": "Inbox and delivery preferences",
+    "title": "Notifications",
+    "channels": {
+      "email": "Email",
+      "internal": "In-app",
+      "internalHint": "Always enabled",
+      "saveFailed": "Failed to save notification preferences.",
+      "saved": "Notification preferences saved.",
+      "sms": "SMS",
+      "telegram": "Telegram",
+      "title": "Delivery"
+    }
   },
   "users": {
     "active": "Active",

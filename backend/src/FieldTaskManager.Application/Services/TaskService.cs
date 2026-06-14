@@ -2,14 +2,18 @@ using FieldTaskManager.Application.Common;
 using FieldTaskManager.Application.Dtos;
 using FieldTaskManager.Application.Interfaces;
 using FieldTaskManager.Application.Mapping;
+using FieldTaskManager.Application.Messaging;
 using FieldTaskManager.Domain.Entities;
 using FieldTaskManager.Domain.Enums;
 using FieldTaskManager.Domain.Repositories;
+using System.Text.Json;
 
 namespace FieldTaskManager.Application.Services;
 
 public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
 {
+    private static readonly JsonSerializerOptions EventJsonOptions = new(JsonSerializerDefaults.Web);
+
     // Allowed status transitions per role.
     // Worker (assignee only): Created -> InProgress -> Done.
     // OrgAdmin: Done -> Verified (approve) or Done -> InProgress (return to work).
@@ -80,6 +84,12 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
             return Result.Failure<TaskDto>(assigneeResult.Error);
         }
 
+        var creator = await unitOfWork.Users.GetByIdAsync(user.Id, ct);
+        if (creator is null)
+        {
+            return Result.Failure<TaskDto>(Error.NotFound("Current user was not found."));
+        }
+
         var task = new TaskItem
         {
             Title = request.Title.Trim(),
@@ -89,10 +99,19 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
             OrganizationId = organizationId,
             AssigneeId = request.AssigneeId,
             Deadline = NormalizeUtc(request.Deadline),
-            CreatedById = user.Id
+            CreatedById = creator.Id
         };
 
         unitOfWork.Tasks.Add(task);
+        AddTaskEvent("TaskCreated", task, new TaskCreatedEvent(
+            task.Id,
+            task.Title,
+            task.OrganizationId,
+            task.AssigneeId,
+            assigneeResult.Value?.FullName,
+            task.CreatedById,
+            creator.FullName,
+            task.Deadline));
         await unitOfWork.SaveChangesAsync(ct);
 
         var createdTask = await GetTaskAsync(task.Id, ct);
@@ -209,6 +228,24 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
         task.Status = request.Status;
         task.UpdatedAt = DateTime.UtcNow;
 
+        if (request.Status is FieldTaskStatus.Done or FieldTaskStatus.Verified)
+        {
+            AddTaskEvent(
+                request.Status == FieldTaskStatus.Done ? "TaskDone" : "TaskVerified",
+                task,
+                new TaskStatusChangedEvent(
+                    task.Id,
+                    task.Title,
+                    task.OrganizationId,
+                    task.Status.ToString(),
+                    task.AssigneeId,
+                    task.Assignee?.FullName,
+                    task.CreatedById,
+                    task.CreatedBy.FullName,
+                    user.Id,
+                    task.Deadline));
+        }
+
         await unitOfWork.SaveChangesAsync(ct);
         return Result.Success(task.ToDto());
     }
@@ -308,25 +345,43 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
         return Result.Success();
     }
 
-    private async Task<Result> EnsureAssigneeIsWorkerAsync(Guid? assigneeId, Guid organizationId, CancellationToken ct)
+    private async Task<Result<User?>> EnsureAssigneeIsWorkerAsync(Guid? assigneeId, Guid organizationId, CancellationToken ct)
     {
         if (assigneeId is null)
         {
-            return Result.Success();
+            return Result.Success<User?>(null);
         }
 
         var assignee = await unitOfWork.Users.GetByIdAsync(assigneeId.Value, ct);
         if (assignee is null)
         {
-            return Result.Failure(Error.BadRequest("Selected assignee does not exist."));
+            return Result.Failure<User?>(Error.BadRequest("Selected assignee does not exist."));
         }
 
         if (assignee.OrganizationId != organizationId || assignee.Role != UserRole.Worker || !assignee.IsActive)
         {
-            return Result.Failure(Error.BadRequest("Tasks can only be assigned to active workers in the current organization."));
+            return Result.Failure<User?>(Error.BadRequest("Tasks can only be assigned to active workers in the current organization."));
         }
 
-        return Result.Success();
+        return Result.Success<User?>(assignee);
+    }
+
+    private void AddTaskEvent(string type, TaskItem task, object payload)
+    {
+        var message = new OutboxMessage
+        {
+            Type = type,
+            AggregateId = task.Id,
+            OccurredAt = DateTime.UtcNow
+        };
+        message.Payload = JsonSerializer.Serialize(new OutboxEventEnvelope(
+            message.Id,
+            type,
+            task.Id,
+            message.OccurredAt,
+            payload), EventJsonOptions);
+
+        unitOfWork.Outbox.Add(message);
     }
 
     private static Result<Guid> RequireOrganization(CurrentUser user) =>

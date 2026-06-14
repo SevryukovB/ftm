@@ -13,6 +13,37 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  notification-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ftm
+      POSTGRES_PASSWORD: ftm
+      POSTGRES_DB: ftm_notifications
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ftm -d ftm_notifications"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+    volumes:
+      - notification_pgdata:/var/lib/postgresql/data
+
+  kafka:
+    image: apache/kafka:3.7.1
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+
   api:
     build: ./backend
     environment:
@@ -24,18 +55,54 @@ services:
       Admin__Email: admin@ftm.local
       Admin__Password: Admin123!
       Admin__FullName: Administrator
+      Kafka__BootstrapServers: kafka:9092
+      Kafka__TaskEventsTopic: task-events
     depends_on:
       db:
         condition: service_healthy
+      kafka:
+        condition: service_started
+
+  notifications:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.notifications
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: Host=notification-db;Port=5432;Database=ftm_notifications;Username=ftm;Password=ftm
+      Jwt__Key: ftm-pilot-super-secret-signing-key-change-me-0123456789
+      Jwt__Issuer: FieldTaskManager
+      Jwt__Audience: FieldTaskManager
+      Kafka__BootstrapServers: kafka:9092
+      Kafka__TaskEventsTopic: task-events
+      Kafka__ConsumerGroup: notification-service
+    depends_on:
+      notification-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+  gateway:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.gateway
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ReverseProxy__Clusters__api__Destinations__api__Address: http://api:8080
+      ReverseProxy__Clusters__notifications__Destinations__notifications__Address: http://notifications:8080
+    depends_on:
+      - api
+      - notifications
     ports:
       - "5080:8080"
 
   web:
     build: ./frontend
     depends_on:
-      - api
+      - gateway
     ports:
       - "8080:80"
 
 volumes:
   pgdata:
+  notification_pgdata:

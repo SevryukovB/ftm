@@ -4,6 +4,7 @@ import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../core/auth.service';
+import { NotificationService } from '../../core/notification.service';
 import { LanguageSelectComponent } from '../../shared/language-select.component';
 
 @Component({
@@ -17,6 +18,12 @@ import { LanguageSelectComponent } from '../../shared/language-select.component'
         <div class="header-spacer"></div>
         <div class="app-header-actions">
           <app-language-select />
+          <a class="notification-link" routerLink="/notifications" routerLinkActive="active" [pTooltip]="'nav.notifications' | translate">
+            <i class="pi pi-bell"></i>
+            @if (unreadCount() > 0) {
+              <span>{{ unreadCount() }}</span>
+            }
+          </a>
           <span class="user-name">{{ userName() }}</span>
           <span class="role-pill role-pill-admin">{{ roleKey() | translate }}</span>
           <p-button icon="pi pi-sign-out" severity="secondary" [text]="true" [pTooltip]="'nav.signOut' | translate" (onClick)="logout()" />
@@ -57,14 +64,44 @@ import { LanguageSelectComponent } from '../../shared/language-select.component'
   styles: [`
     .logo { color: inherit; font-weight: 700; text-decoration: none; white-space: nowrap; }
     .logo i { color: #f9fafb; }
+    .notification-link {
+      position: relative;
+      display: inline-grid;
+      place-items: center;
+      width: 2.35rem;
+      height: 2.35rem;
+      border-radius: 6px;
+      color: inherit;
+      text-decoration: none;
+    }
+    .notification-link:hover,
+    .notification-link.active { background: rgba(255, 255, 255, 0.12); }
+    .notification-link span {
+      position: absolute;
+      top: 0.18rem;
+      right: 0.18rem;
+      min-width: 1rem;
+      height: 1rem;
+      padding: 0 0.25rem;
+      border-radius: 999px;
+      background: #ef4444;
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 800;
+      line-height: 1rem;
+      text-align: center;
+    }
   `]
 })
 export class AdminShellComponent {
   readonly userName = computed(() => this.auth.user()?.fullName ?? '');
   readonly roleKey = computed(() => `roles.${this.auth.user()?.role ?? 'OrgAdmin'}`);
   readonly homeLink = computed(() => this.auth.isSuperAdmin() ? '/organizations' : '/tasks');
+  readonly unreadCount = computed(() => this.notifications.unreadCount());
 
-  constructor(readonly auth: AuthService) {}
+  constructor(readonly auth: AuthService, private notifications: NotificationService) {
+    this.notifications.refreshUnreadCount();
+  }
 
   logout(): void {
     this.auth.logout();

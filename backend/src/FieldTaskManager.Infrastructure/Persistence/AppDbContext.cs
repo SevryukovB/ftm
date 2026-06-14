@@ -9,6 +9,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<User> Users => Set<User>();
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
     public DbSet<TaskComment> Comments => Set<TaskComment>();
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -80,6 +81,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithMany()
                 .HasForeignKey(c => c.AuthorId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<OutboxMessage>(builder =>
+        {
+            builder.ToTable("outbox_messages");
+            builder.HasKey(m => m.Id);
+            builder.Property(m => m.Type).IsRequired().HasMaxLength(128);
+            builder.Property(m => m.Payload).IsRequired();
+            builder.Property(m => m.LastError).HasMaxLength(2000);
+            builder.HasIndex(m => m.PublishedAt);
+            builder.HasIndex(m => m.NextAttemptAt);
+            builder.HasIndex(m => new { m.Type, m.AggregateId });
         });
     }
 }

@@ -8,5 +8,6 @@ public interface IUnitOfWork
     IUserRepository Users { get; }
     IRepository<Organization> Organizations { get; }
     IRepository<TaskComment> Comments { get; }
+    IOutboxRepository Outbox { get; }
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

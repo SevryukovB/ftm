@@ -56,3 +56,28 @@ Page reload sent to client(s).
 Application bundle generation complete. [0.624 seconds]
 
 Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+
+No output file changes.
+
+Application bundle generation complete. [0.448 seconds]
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m[2m | [22m [1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m [2m | [22m[36m171.13 kB[39m[2m | [22m
+
+Application bundle generation complete. [0.434 seconds]
+
+Page reload sent to client(s).
+[2m6:04:03 PM[22m [36m[1m[vite][22m[39m [32m✨ new dependencies optimized: [33mprimeng/checkbox[32m[39m
+[2m6:04:03 PM[22m [36m[1m[vite][22m[39m [32m✨ optimized dependencies changed. reloading[39m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m [2m | [22m[1mRaw size[22m
+[32mstyles.css[39m         [2m | [22m[2mstyles[22m[2m | [22m[36m33.17 kB[39m[2m | [22m
+
+Application bundle generation complete. [0.211 seconds]
+
+HMR update sent to client(s).

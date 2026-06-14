@@ -1,41 +1,18 @@
 using System.Text;
-using System.Text.Json.Serialization;
-using FieldTaskManager.Api.Middleware;
-using FieldTaskManager.Application.Interfaces;
-using FieldTaskManager.Application.Services;
-using FieldTaskManager.Domain.Entities;
-using FieldTaskManager.Domain.Repositories;
-using FieldTaskManager.Infrastructure.Auth;
-using FieldTaskManager.Infrastructure.Messaging;
-using FieldTaskManager.Infrastructure.Persistence;
-using FieldTaskManager.Infrastructure.Repositories;
-using FieldTaskManager.Infrastructure.Seeding;
+using FieldTaskManager.NotificationService.Messaging;
+using FieldTaskManager.NotificationService.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services
-    .AddControllers()
-    .AddJsonOptions(options =>
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
-
-builder.Services.AddDbContext<AppDbContext>(options =>
+builder.Services.AddControllers();
+builder.Services.AddDbContext<NotificationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
-builder.Services.AddSingleton<ITokenService, TokenService>();
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<ITaskService, TaskService>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IOrganizationService, OrganizationService>();
-
 builder.Services.Configure<KafkaOptions>(builder.Configuration.GetSection("Kafka"));
-builder.Services.Configure<OutboxPublisherOptions>(builder.Configuration.GetSection("OutboxPublisher"));
-builder.Services.AddHostedService<OutboxPublisherHostedService>();
+builder.Services.AddHostedService<TaskEventsConsumerHostedService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -57,45 +34,37 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
-
 builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy =>
         policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
-
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Create the schema and seed the default administrator on first start.
-// A short retry loop covers the case when PostgreSQL is still warming up.
 using (var scope = app.Services.CreateScope())
 {
+    var context = scope.ServiceProvider.GetRequiredService<NotificationDbContext>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>();
 
     const int maxAttempts = 10;
     for (var attempt = 1; attempt <= maxAttempts; attempt++)
     {
         try
         {
-            await DbSeeder.InitializeAsync(context, hasher, app.Configuration, logger);
+            await context.Database.EnsureCreatedAsync();
             break;
         }
         catch (Exception ex) when (attempt < maxAttempts)
         {
-            logger.LogWarning(ex, "Database is not ready yet (attempt {Attempt}/{Max}). Retrying...", attempt, maxAttempts);
+            logger.LogWarning(ex, "Notification database is not ready yet (attempt {Attempt}/{Max}). Retrying...", attempt, maxAttempts);
             await Task.Delay(TimeSpan.FromSeconds(3));
         }
     }
 }
 
-app.UseMiddleware<ExceptionHandlingMiddleware>();
-
 app.UseSwagger();
 app.UseSwaggerUI();
-
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();

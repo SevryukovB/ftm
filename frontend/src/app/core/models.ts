@@ -45,6 +45,24 @@ export interface TaskFilter {
   search?: string | null;
 }
 
+export interface AppNotification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  payloadJson: string;
+  isRead: boolean;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface NotificationPreferences {
+  internal: boolean;
+  email: boolean;
+  sms: boolean;
+  telegram: boolean;
+}
+
 export const STATUS_META: Record<TaskStatus, { label: string; color: string; severity: 'info' | 'warn' | 'success' | 'secondary' }> = {
   Created: { label: 'Created', color: '#3b82f6', severity: 'info' },
   InProgress: { label: 'In Progress', color: '#f59e0b', severity: 'warn' },

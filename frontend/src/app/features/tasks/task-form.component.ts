@@ -81,8 +81,38 @@ let mapSeq = 0;
       <div class="field">
         <label>{{ 'tasks.location' | translate }} * <span class="muted">- {{ 'tasks.form.locationHint' | translate }}</span></label>
         <div class="pick-map" [id]="mapId"></div>
+        <div class="coordinate-grid">
+          <div class="field coordinate-field">
+            <label>{{ 'tasks.form.latitude' | translate }}</label>
+            <input
+              pInputText
+              type="number"
+              min="-90"
+              max="90"
+              step="0.000001"
+              [(ngModel)]="latitude"
+              (ngModelChange)="onCoordinatesChange()"
+              [placeholder]="'tasks.form.latitudePlaceholder' | translate" />
+          </div>
+          <div class="field coordinate-field">
+            <label>{{ 'tasks.form.longitude' | translate }}</label>
+            <input
+              pInputText
+              type="number"
+              min="-180"
+              max="180"
+              step="0.000001"
+              [(ngModel)]="longitude"
+              (ngModelChange)="onCoordinatesChange()"
+              [placeholder]="'tasks.form.longitudePlaceholder' | translate" />
+          </div>
+        </div>
         @if (latitude !== null && longitude !== null) {
-          <small class="muted">{{ latitude!.toFixed(5) }}, {{ longitude!.toFixed(5) }}</small>
+          @if (hasValidCoordinates()) {
+            <small class="muted">{{ latitude!.toFixed(5) }}, {{ longitude!.toFixed(5) }}</small>
+          } @else {
+            <small class="overdue">{{ 'tasks.form.coordinatesInvalid' | translate }}</small>
+          }
         } @else {
           <small class="overdue">{{ 'tasks.form.locationMissing' | translate }}</small>
         }
@@ -100,6 +130,9 @@ let mapSeq = 0;
     .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
     @media (max-width: 720px) { .grid-3 { grid-template-columns: 1fr; } }
     .pick-map { height: 260px; border-radius: 8px; overflow: hidden; }
+    .coordinate-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: .75rem; }
+    .coordinate-field { margin-bottom: 0; }
+    @media (max-width: 560px) { .coordinate-grid { grid-template-columns: 1fr; } }
     :host ::ng-deep .p-select, :host ::ng-deep .p-datepicker { width: 100%; }
   `]
 })
@@ -136,7 +169,7 @@ export class TaskFormComponent implements AfterViewInit, OnDestroy {
   }
 
   get canSave(): boolean {
-    return !!this.title.trim() && this.latitude !== null && this.longitude !== null;
+    return !!this.title.trim() && this.hasValidCoordinates();
   }
 
   ngAfterViewInit(): void {
@@ -229,6 +262,24 @@ export class TaskFormComponent implements AfterViewInit, OnDestroy {
     }
   }
 
+  onCoordinatesChange(): void {
+    if (!this.hasValidCoordinates()) {
+      return;
+    }
+
+    const lat = this.latitude!;
+    const lng = this.longitude!;
+    if (this.map) {
+      this.placeMarker(lat, lng);
+      this.map.setView([lat, lng], this.map.getZoom());
+    }
+  }
+
+  hasValidCoordinates(): boolean {
+    return this.isCoordinate(this.latitude, -90, 90)
+      && this.isCoordinate(this.longitude, -180, 180);
+  }
+
   private placeMarker(lat: number, lng: number): void {
     this.latitude = lat;
     this.longitude = lng;
@@ -244,6 +295,10 @@ export class TaskFormComponent implements AfterViewInit, OnDestroy {
     } else {
       this.marker.setLatLng([lat, lng]);
     }
+  }
+
+  private isCoordinate(value: unknown, min: number, max: number): value is number {
+    return typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
   }
 
   close(): void {

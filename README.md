@@ -49,3 +49,43 @@ flowchart LR
     Scheduler -- "Internal API\nreminder dispatch" --> Api
     Payouts -- "Internal API\napply payout" --> Earnings
 ```
+
+## Запуск проєкту
+
+Для запуску потрібен встановлений **Docker** з compose plugin. `make` бажаний, але не обов'язковий.
+
+```bash
+git clone <repo-url>
+cd field-task-manager
+make run
+```
+
+Якщо `make` недоступний, можна запустити напряму через Docker Compose:
+
+```bash
+git clone <repo-url>
+cd field-task-manager
+docker compose up --build -d
+```
+
+Після запуску:
+
+| Що | URL |
+| --- | --- |
+| Web-застосунок | http://localhost:8080 |
+| API / Swagger | http://localhost:5080/swagger |
+
+Тестовий Super Admin створюється автоматично під час першого запуску:
+
+```text
+Email: admin@ftm.local
+Password: Admin123!
+```
+
+Корисні команди:
+
+```bash
+make logs   # перегляд логів усіх сервісів
+make stop   # зупинити контейнери
+make clean  # зупинити контейнери та видалити volumes/images проєкту
+```

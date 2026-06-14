@@ -1,0 +1,178 @@
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Inter var', Inter, 'Segoe UI', Roboto, sans-serif;
+  background: var(--p-surface-50, #f6f7f9);
+  color: var(--p-text-color, #1f2937);
+}
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.25rem;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  min-height: 4rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--p-content-border-color, #e5e7eb);
+  background: var(--p-content-background, #fff);
+}
+
+.header-spacer {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.worker-header {
+  background: #14532d;
+  border-color: #052e16;
+  color: #f0fdf4;
+}
+
+.admin-header {
+  background: #111827;
+  border-color: #030712;
+  color: #f9fafb;
+}
+
+.app-frame {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr);
+  min-height: calc(100vh - 4rem);
+}
+
+.app-sidebar {
+  border-right: 1px solid var(--p-content-border-color, #e5e7eb);
+  background: var(--p-content-background, #fff);
+  padding: 1rem 0.75rem;
+}
+
+.admin-sidebar {
+  background: #f9fafb;
+}
+
+.worker-sidebar {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.sidebar-title {
+  margin: 0.25rem 0.5rem 0.85rem;
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.worker-sidebar .sidebar-title {
+  color: #166534;
+}
+
+.side-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.side-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  border-radius: 6px;
+  color: var(--p-text-muted-color, #6b7280);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.side-nav a:hover,
+.side-nav a.active {
+  background: var(--p-surface-100, #f3f4f6);
+  color: var(--p-text-color, #1f2937);
+}
+
+.worker-sidebar .side-nav a {
+  color: #166534;
+}
+
+.worker-sidebar .side-nav a:hover,
+.worker-sidebar .side-nav a.active {
+  background: #dcfce7;
+  color: #052e16;
+}
+
+.app-main {
+  min-width: 0;
+}
+
+.app-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.user-name {
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.role-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0 0.65rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.role-pill-admin {
+  background: rgba(249, 250, 251, 0.16);
+  color: #f9fafb;
+}
+
+.role-pill-worker {
+  background: rgba(240, 253, 244, 0.18);
+  color: #f0fdf4;
+}
+
+.muted { color: var(--p-text-muted-color, #6b7280); }
+
+.overdue { color: var(--p-red-500, #ef4444); font-weight: 600; }
+
+/* Leaflet must not overlap PrimeNG dialogs/menus */
+.leaflet-container { z-index: 0; }
+.leaflet-pane, .leaflet-top, .leaflet-bottom { z-index: 0 !important; }
+
+.ftm-marker {
+  display: block;
+  width: 22px;
+  height: 22px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+}
+
+.map-legend {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 500;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.8rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}

@@ -1,0 +1,16 @@
+stages:
+  - build
+
+backend:
+  stage: build
+  image: mcr.microsoft.com/dotnet/sdk:9.0
+  script:
+    - dotnet build backend/FieldTaskManager.sln -c Release
+
+frontend:
+  stage: build
+  image: node:20-alpine
+  script:
+    - cd frontend
+    - npm install --no-audit --no-fund
+    - npm run build

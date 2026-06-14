@@ -1,0 +1,126 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "deleted": "Deleted",
+    "edit": "Edit",
+    "error": "Error",
+    "reset": "Reset",
+    "saved": "Saved"
+  },
+  "nav": {
+    "map": "Map",
+    "signOut": "Sign out",
+    "tasks": "Tasks"
+  },
+  "roles": {
+    "Admin": "Admin",
+    "Worker": "Worker"
+  },
+  "status": {
+    "Created": "Created",
+    "InProgress": "In Progress",
+    "Done": "Done",
+    "Verified": "Verified"
+  },
+  "auth": {
+    "email": "Email",
+    "emailPlaceholder": "you@example.com",
+    "fullName": "Full name",
+    "fullNamePlaceholder": "John Field",
+    "password": "Password",
+    "passwordMin": "Password (min 6 characters)",
+    "login": {
+      "action": "Sign in",
+      "failed": "Sign in failed. Check your credentials.",
+      "noAccount": "No account yet?",
+      "registerLink": "Register as a worker",
+      "subtitle": "Sign in to continue",
+      "validation": "Enter your email and password."
+    },
+    "register": {
+      "action": "Register",
+      "alreadyRegistered": "Already registered?",
+      "failed": "Registration failed.",
+      "signInLink": "Sign in",
+      "subtitle": "New accounts get the Worker role",
+      "title": "Create account",
+      "validation": "Fill in all fields. Password must be at least 6 characters."
+    }
+  },
+  "tasks": {
+    "assignee": "Assignee",
+    "columns": {
+      "assignee": "Assignee",
+      "created": "Created",
+      "deadline": "Deadline",
+      "status": "Status",
+      "title": "Title"
+    },
+    "createdBy": "Created by",
+    "deadline": "Deadline",
+    "delete": {
+      "header": "Confirm deletion",
+      "message": "Delete this task? This cannot be undone."
+    },
+    "description": "Description",
+    "empty": "No tasks found.",
+    "loadFailed": "Failed to load tasks",
+    "location": "Location",
+    "newTask": "New Task",
+    "overdue": "Overdue",
+    "searchPlaceholder": "Search title / description",
+    "status": "Status",
+    "title": "Tasks",
+    "unassigned": "Unassigned",
+    "actions": {
+      "markDone": "Mark done",
+      "returnToWork": "Return to work",
+      "startWork": "Start work",
+      "verifyClose": "Verify & close"
+    },
+    "details": {
+      "back": "Back to tasks",
+      "dragHint": "drag the marker, then save",
+      "loadFailed": "Failed to load task",
+      "locationUpdated": "Location updated",
+      "locationUpdateFailed": "Failed to update location",
+      "notFound": "Task not found.",
+      "saveLocation": "Save location"
+    },
+    "form": {
+      "createTask": "Create task",
+      "description": "Description",
+      "descriptionPlaceholder": "What exactly needs to be done on site",
+      "editTitle": "Edit task",
+      "locationHint": "click the map to place the marker, drag it to adjust",
+      "locationMissing": "Location is not set yet",
+      "newTitle": "New task",
+      "saveChanges": "Save changes",
+      "title": "Title",
+      "titlePlaceholder": "Inspect irrigation pump #3"
+    },
+    "messages": {
+      "created": "Task created",
+      "deleteFailed": "Failed to delete task",
+      "removed": "Task removed",
+      "saveFailed": "Failed to save the task.",
+      "statusChanged": "Status changed",
+      "statusChangeFailed": "Failed to change status",
+      "taskIsNow": "Task is now {{status}}",
+      "updated": "Task updated"
+    }
+  },
+  "comments": {
+    "add": "Add comment",
+    "addFailed": "Failed to add comment",
+    "empty": "No comments yet.",
+    "placeholder": "Write a comment...",
+    "title": "Comments ({{count}})",
+    "unknownAuthor": "Unknown"
+  },
+  "map": {
+    "allStatuses": "All statuses",
+    "openTask": "Open task"
+  }
+}

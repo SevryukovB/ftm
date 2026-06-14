@@ -1,0 +1,126 @@
+{
+  "common": {
+    "cancel": "Скасувати",
+    "delete": "Видалити",
+    "deleted": "Видалено",
+    "edit": "Редагувати",
+    "error": "Помилка",
+    "reset": "Скинути",
+    "saved": "Збережено"
+  },
+  "nav": {
+    "map": "Мапа",
+    "signOut": "Вийти",
+    "tasks": "Завдання"
+  },
+  "roles": {
+    "Admin": "Адміністратор",
+    "Worker": "Працівник"
+  },
+  "status": {
+    "Created": "Створено",
+    "InProgress": "У роботі",
+    "Done": "Виконано",
+    "Verified": "Підтверджено"
+  },
+  "auth": {
+    "email": "Email",
+    "emailPlaceholder": "you@example.com",
+    "fullName": "Повне ім'я",
+    "fullNamePlaceholder": "Іван Польовий",
+    "password": "Пароль",
+    "passwordMin": "Пароль (мінімум 6 символів)",
+    "login": {
+      "action": "Увійти",
+      "failed": "Не вдалося увійти. Перевірте облікові дані.",
+      "noAccount": "Ще немає акаунта?",
+      "registerLink": "Зареєструватися як працівник",
+      "subtitle": "Увійдіть, щоб продовжити",
+      "validation": "Введіть email і пароль."
+    },
+    "register": {
+      "action": "Зареєструватися",
+      "alreadyRegistered": "Вже зареєстровані?",
+      "failed": "Не вдалося зареєструватися.",
+      "signInLink": "Увійти",
+      "subtitle": "Нові акаунти отримують роль працівника",
+      "title": "Створити акаунт",
+      "validation": "Заповніть усі поля. Пароль має містити щонайменше 6 символів."
+    }
+  },
+  "tasks": {
+    "assignee": "Виконавець",
+    "columns": {
+      "assignee": "Виконавець",
+      "created": "Створено",
+      "deadline": "Дедлайн",
+      "status": "Статус",
+      "title": "Назва"
+    },
+    "createdBy": "Створив",
+    "deadline": "Дедлайн",
+    "delete": {
+      "header": "Підтвердіть видалення",
+      "message": "Видалити це завдання? Цю дію неможливо скасувати."
+    },
+    "description": "Опис",
+    "empty": "Завдань не знайдено.",
+    "loadFailed": "Не вдалося завантажити завдання",
+    "location": "Локація",
+    "newTask": "Нове завдання",
+    "overdue": "Прострочено",
+    "searchPlaceholder": "Пошук за назвою / описом",
+    "status": "Статус",
+    "title": "Завдання",
+    "unassigned": "Не призначено",
+    "actions": {
+      "markDone": "Позначити виконаним",
+      "returnToWork": "Повернути в роботу",
+      "startWork": "Почати роботу",
+      "verifyClose": "Підтвердити й закрити"
+    },
+    "details": {
+      "back": "Назад до завдань",
+      "dragHint": "перетягніть маркер і збережіть",
+      "loadFailed": "Не вдалося завантажити завдання",
+      "locationUpdated": "Локацію оновлено",
+      "locationUpdateFailed": "Не вдалося оновити локацію",
+      "notFound": "Завдання не знайдено.",
+      "saveLocation": "Зберегти локацію"
+    },
+    "form": {
+      "createTask": "Створити завдання",
+      "description": "Опис",
+      "descriptionPlaceholder": "Що саме потрібно зробити на місці",
+      "editTitle": "Редагувати завдання",
+      "locationHint": "натисніть на мапу, щоб поставити маркер, і перетягніть його для уточнення",
+      "locationMissing": "Локацію ще не вказано",
+      "newTitle": "Нове завдання",
+      "saveChanges": "Зберегти зміни",
+      "title": "Назва",
+      "titlePlaceholder": "Перевірити насос зрошення #3"
+    },
+    "messages": {
+      "created": "Завдання створено",
+      "deleteFailed": "Не вдалося видалити завдання",
+      "removed": "Завдання видалено",
+      "saveFailed": "Не вдалося зберегти завдання.",
+      "statusChanged": "Статус змінено",
+      "statusChangeFailed": "Не вдалося змінити статус",
+      "taskIsNow": "Поточний статус: {{status}}",
+      "updated": "Завдання оновлено"
+    }
+  },
+  "comments": {
+    "add": "Додати коментар",
+    "addFailed": "Не вдалося додати коментар",
+    "empty": "Коментарів ще немає.",
+    "placeholder": "Напишіть коментар...",
+    "title": "Коментарі ({{count}})",
+    "unknownAuthor": "Невідомий автор"
+  },
+  "map": {
+    "allStatuses": "Усі статуси",
+    "openTask": "Відкрити завдання"
+  }
+}

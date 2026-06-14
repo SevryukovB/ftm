@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ftm
+      POSTGRES_PASSWORD: ftm
+      POSTGRES_DB: ftm
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ftm -d ftm"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build: ./backend
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: Host=db;Port=5432;Database=ftm;Username=ftm;Password=ftm
+      Jwt__Key: ftm-pilot-super-secret-signing-key-change-me-0123456789
+      Jwt__Issuer: FieldTaskManager
+      Jwt__Audience: FieldTaskManager
+      Admin__Email: admin@ftm.local
+      Admin__Password: Admin123!
+      Admin__FullName: Administrator
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "5080:8080"
+
+  web:
+    build: ./frontend
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+
+volumes:
+  pgdata:

@@ -1,3 +1,4 @@
+using FieldTaskManager.Api.Extensions;
 using FieldTaskManager.Application.Dtos;
 using FieldTaskManager.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -10,9 +11,9 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
 {
     [HttpPost("register")]
     public async Task<ActionResult<AuthResponse>> Register(RegisterRequest request, CancellationToken ct) =>
-        Ok(await authService.RegisterAsync(request, ct));
+        (await authService.RegisterAsync(request, ct)).ToActionResult(this);
 
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponse>> Login(LoginRequest request, CancellationToken ct) =>
-        Ok(await authService.LoginAsync(request, ct));
+        (await authService.LoginAsync(request, ct)).ToActionResult(this);
 }

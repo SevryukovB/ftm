@@ -19,43 +19,48 @@ public sealed class TasksController(ITaskService taskService) : ControllerBase
         [FromQuery] Guid? assigneeId,
         [FromQuery] string? search,
         CancellationToken ct) =>
-        Ok(await taskService.SearchAsync(new TaskFilter(status, assigneeId, search), User.ToCurrentUser(), ct));
+        (await taskService.SearchAsync(new TaskFilter(status, assigneeId, search), User.ToCurrentUser(), ct)).ToActionResult(this);
 
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<TaskDto>> Get(Guid id, CancellationToken ct) =>
-        Ok(await taskService.GetAsync(id, User.ToCurrentUser(), ct));
+        (await taskService.GetAsync(id, User.ToCurrentUser(), ct)).ToActionResult(this);
 
     [HttpPost]
     [Authorize(Roles = "OrgAdmin")]
     public async Task<ActionResult<TaskDto>> Create(CreateTaskRequest request, CancellationToken ct)
     {
-        var task = await taskService.CreateAsync(request, User.ToCurrentUser(), ct);
+        var result = await taskService.CreateAsync(request, User.ToCurrentUser(), ct);
+        if (result.IsFailure)
+        {
+            return result.ToFailureActionResult<TaskDto>(this);
+        }
+
+        var task = result.Value;
         return CreatedAtAction(nameof(Get), new { id = task.Id }, task);
     }
 
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "OrgAdmin")]
     public async Task<ActionResult<TaskDto>> Update(Guid id, UpdateTaskRequest request, CancellationToken ct) =>
-        Ok(await taskService.UpdateAsync(id, request, User.ToCurrentUser(), ct));
+        (await taskService.UpdateAsync(id, request, User.ToCurrentUser(), ct)).ToActionResult(this);
 
     [HttpPut("{id:guid}/location")]
     [Authorize(Roles = "OrgAdmin")]
     public async Task<ActionResult<TaskDto>> UpdateLocation(Guid id, UpdateLocationRequest request, CancellationToken ct) =>
-        Ok(await taskService.UpdateLocationAsync(id, request, User.ToCurrentUser(), ct));
+        (await taskService.UpdateLocationAsync(id, request, User.ToCurrentUser(), ct)).ToActionResult(this);
 
     [HttpPost("{id:guid}/status")]
     public async Task<ActionResult<TaskDto>> ChangeStatus(Guid id, ChangeStatusRequest request, CancellationToken ct) =>
-        Ok(await taskService.ChangeStatusAsync(id, request, User.ToCurrentUser(), ct));
+        (await taskService.ChangeStatusAsync(id, request, User.ToCurrentUser(), ct)).ToActionResult(this);
 
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "OrgAdmin")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
-        await taskService.DeleteAsync(id, User.ToCurrentUser(), ct);
-        return NoContent();
+        return (await taskService.DeleteAsync(id, User.ToCurrentUser(), ct)).ToActionResult(this);
     }
 
     [HttpPost("{id:guid}/comments")]
     public async Task<ActionResult<CommentDto>> AddComment(Guid id, AddCommentRequest request, CancellationToken ct) =>
-        Ok(await taskService.AddCommentAsync(id, request, User.ToCurrentUser(), ct));
+        (await taskService.AddCommentAsync(id, request, User.ToCurrentUser(), ct)).ToActionResult(this);
 }

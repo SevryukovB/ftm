@@ -1,5 +1,5 @@
 using FieldTaskManager.Application.Dtos;
-using FieldTaskManager.Application.Exceptions;
+using FieldTaskManager.Application.Common;
 using FieldTaskManager.Application.Interfaces;
 using FieldTaskManager.Application.Mapping;
 using FieldTaskManager.Domain.Entities;
@@ -14,13 +14,13 @@ public sealed class AuthService(
     IPasswordHasher<User> passwordHasher,
     ITokenService tokenService) : IAuthService
 {
-    public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
+    public async Task<Result<AuthResponse>> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
     {
         var email = request.Email.Trim().ToLowerInvariant();
 
         if (await unitOfWork.Users.ExistsByEmailAsync(email, ct))
         {
-            throw new ConflictException($"User with email '{email}' already exists.");
+            return Result.Failure<AuthResponse>(Error.Conflict($"User with email '{email}' already exists."));
         }
 
         var organization = new Organization
@@ -42,26 +42,29 @@ public sealed class AuthService(
         unitOfWork.Users.Add(user);
         await unitOfWork.SaveChangesAsync(ct);
 
-        return new AuthResponse(tokenService.CreateToken(user), user.ToDto());
+        return Result.Success(new AuthResponse(tokenService.CreateToken(user), user.ToDto()));
     }
 
-    public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct = default)
+    public async Task<Result<AuthResponse>> LoginAsync(LoginRequest request, CancellationToken ct = default)
     {
         var email = request.Email.Trim().ToLowerInvariant();
-        var user = await unitOfWork.Users.GetByEmailWithOrganizationAsync(email, ct)
-            ?? throw new UnauthorizedException("Invalid email or password.");
+        var user = await unitOfWork.Users.GetByEmailWithOrganizationAsync(email, ct);
+        if (user is null)
+        {
+            return Result.Failure<AuthResponse>(Error.Unauthorized("Invalid email or password."));
+        }
 
         if (!user.IsActive || user.Organization?.IsActive == false)
         {
-            throw new UnauthorizedException("User or organization access is disabled.");
+            return Result.Failure<AuthResponse>(Error.Unauthorized("User or organization access is disabled."));
         }
 
         var result = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
         if (result == PasswordVerificationResult.Failed)
         {
-            throw new UnauthorizedException("Invalid email or password.");
+            return Result.Failure<AuthResponse>(Error.Unauthorized("Invalid email or password."));
         }
 
-        return new AuthResponse(tokenService.CreateToken(user), user.ToDto());
+        return Result.Success(new AuthResponse(tokenService.CreateToken(user), user.ToDto()));
     }
 }

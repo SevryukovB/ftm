@@ -1,6 +1,5 @@
 using FieldTaskManager.Application.Common;
 using FieldTaskManager.Application.Dtos;
-using FieldTaskManager.Application.Exceptions;
 using FieldTaskManager.Application.Interfaces;
 using FieldTaskManager.Application.Mapping;
 using FieldTaskManager.Domain.Entities;
@@ -28,26 +27,58 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
         ]
     };
 
-    public async Task<IReadOnlyList<TaskDto>> SearchAsync(TaskFilter filter, CurrentUser user, CancellationToken ct = default)
+    public async Task<Result<IReadOnlyList<TaskDto>>> SearchAsync(TaskFilter filter, CurrentUser user, CancellationToken ct = default)
     {
-        var organizationId = RequireOrganization(user);
+        var organizationResult = RequireOrganization(user);
+        if (organizationResult.IsFailure)
+        {
+            return Result.Failure<IReadOnlyList<TaskDto>>(organizationResult.Error);
+        }
+
+        var organizationId = organizationResult.Value;
         var effectiveFilter = user.IsOrgAdmin ? filter : filter with { AssigneeId = user.Id };
         var tasks = await unitOfWork.Tasks.SearchAsync(organizationId, effectiveFilter, ct);
-        return tasks.Select(t => t.ToDto()).ToList();
+        return Result.Success<IReadOnlyList<TaskDto>>(tasks.Select(t => t.ToDto()).ToList());
     }
 
-    public async Task<TaskDto> GetAsync(Guid id, CurrentUser user, CancellationToken ct = default)
+    public async Task<Result<TaskDto>> GetAsync(Guid id, CurrentUser user, CancellationToken ct = default)
     {
-        var task = await GetTaskOrThrowAsync(id, ct);
-        EnsureCanView(task, user);
-        return task.ToDto(includeComments: true);
+        var taskResult = await GetTaskAsync(id, ct);
+        if (taskResult.IsFailure)
+        {
+            return Result.Failure<TaskDto>(taskResult.Error);
+        }
+
+        var task = taskResult.Value;
+        var canView = EnsureCanView(task, user);
+        if (canView.IsFailure)
+        {
+            return Result.Failure<TaskDto>(canView.Error);
+        }
+
+        return Result.Success(task.ToDto(includeComments: true));
     }
 
-    public async Task<TaskDto> CreateAsync(CreateTaskRequest request, CurrentUser user, CancellationToken ct = default)
+    public async Task<Result<TaskDto>> CreateAsync(CreateTaskRequest request, CurrentUser user, CancellationToken ct = default)
     {
-        EnsureOrgAdmin(user);
-        var organizationId = RequireOrganization(user);
-        await EnsureAssigneeIsWorkerAsync(request.AssigneeId, organizationId, ct);
+        var canManage = EnsureOrgAdmin(user);
+        if (canManage.IsFailure)
+        {
+            return Result.Failure<TaskDto>(canManage.Error);
+        }
+
+        var organizationResult = RequireOrganization(user);
+        if (organizationResult.IsFailure)
+        {
+            return Result.Failure<TaskDto>(organizationResult.Error);
+        }
+
+        var organizationId = organizationResult.Value;
+        var assigneeResult = await EnsureAssigneeIsWorkerAsync(request.AssigneeId, organizationId, ct);
+        if (assigneeResult.IsFailure)
+        {
+            return Result.Failure<TaskDto>(assigneeResult.Error);
+        }
 
         var task = new TaskItem
         {
@@ -64,17 +95,45 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
         unitOfWork.Tasks.Add(task);
         await unitOfWork.SaveChangesAsync(ct);
 
-        return (await GetTaskOrThrowAsync(task.Id, ct)).ToDto();
+        var createdTask = await GetTaskAsync(task.Id, ct);
+        return createdTask.IsSuccess
+            ? Result.Success(createdTask.Value.ToDto())
+            : Result.Failure<TaskDto>(createdTask.Error);
     }
 
-    public async Task<TaskDto> UpdateAsync(Guid id, UpdateTaskRequest request, CurrentUser user, CancellationToken ct = default)
+    public async Task<Result<TaskDto>> UpdateAsync(Guid id, UpdateTaskRequest request, CurrentUser user, CancellationToken ct = default)
     {
-        EnsureOrgAdmin(user);
-        var organizationId = RequireOrganization(user);
-        await EnsureAssigneeIsWorkerAsync(request.AssigneeId, organizationId, ct);
+        var canManage = EnsureOrgAdmin(user);
+        if (canManage.IsFailure)
+        {
+            return Result.Failure<TaskDto>(canManage.Error);
+        }
 
-        var task = await GetTaskOrThrowAsync(id, ct);
-        EnsureSameOrganization(task, user);
+        var organizationResult = RequireOrganization(user);
+        if (organizationResult.IsFailure)
+        {
+            return Result.Failure<TaskDto>(organizationResult.Error);
+        }
+
+        var organizationId = organizationResult.Value;
+        var assigneeResult = await EnsureAssigneeIsWorkerAsync(request.AssigneeId, organizationId, ct);
+        if (assigneeResult.IsFailure)
+        {
+            return Result.Failure<TaskDto>(assigneeResult.Error);
+        }
+
+        var taskResult = await GetTaskAsync(id, ct);
+        if (taskResult.IsFailure)
+        {
+            return Result.Failure<TaskDto>(taskResult.Error);
+        }
+
+        var task = taskResult.Value;
+        var sameOrganization = EnsureSameOrganization(task, user);
+        if (sameOrganization.IsFailure)
+        {
+            return Result.Failure<TaskDto>(sameOrganization.Error);
+        }
 
         task.Title = request.Title.Trim();
         task.Description = request.Description?.Trim() ?? string.Empty;
@@ -85,63 +144,121 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
         task.UpdatedAt = DateTime.UtcNow;
 
         await unitOfWork.SaveChangesAsync(ct);
-        return (await GetTaskOrThrowAsync(id, ct)).ToDto();
+        var updatedTask = await GetTaskAsync(id, ct);
+        return updatedTask.IsSuccess
+            ? Result.Success(updatedTask.Value.ToDto())
+            : Result.Failure<TaskDto>(updatedTask.Error);
     }
 
-    public async Task<TaskDto> UpdateLocationAsync(Guid id, UpdateLocationRequest request, CurrentUser user, CancellationToken ct = default)
+    public async Task<Result<TaskDto>> UpdateLocationAsync(Guid id, UpdateLocationRequest request, CurrentUser user, CancellationToken ct = default)
     {
-        EnsureOrgAdmin(user);
+        var canManage = EnsureOrgAdmin(user);
+        if (canManage.IsFailure)
+        {
+            return Result.Failure<TaskDto>(canManage.Error);
+        }
 
-        var task = await GetTaskOrThrowAsync(id, ct);
-        EnsureSameOrganization(task, user);
+        var taskResult = await GetTaskAsync(id, ct);
+        if (taskResult.IsFailure)
+        {
+            return Result.Failure<TaskDto>(taskResult.Error);
+        }
+
+        var task = taskResult.Value;
+        var sameOrganization = EnsureSameOrganization(task, user);
+        if (sameOrganization.IsFailure)
+        {
+            return Result.Failure<TaskDto>(sameOrganization.Error);
+        }
+
         task.Latitude = request.Latitude;
         task.Longitude = request.Longitude;
         task.UpdatedAt = DateTime.UtcNow;
 
         await unitOfWork.SaveChangesAsync(ct);
-        return task.ToDto();
+        return Result.Success(task.ToDto());
     }
 
-    public async Task<TaskDto> ChangeStatusAsync(Guid id, ChangeStatusRequest request, CurrentUser user, CancellationToken ct = default)
+    public async Task<Result<TaskDto>> ChangeStatusAsync(Guid id, ChangeStatusRequest request, CurrentUser user, CancellationToken ct = default)
     {
-        var task = await GetTaskOrThrowAsync(id, ct);
-        EnsureCanView(task, user);
+        var taskResult = await GetTaskAsync(id, ct);
+        if (taskResult.IsFailure)
+        {
+            return Result.Failure<TaskDto>(taskResult.Error);
+        }
+
+        var task = taskResult.Value;
+        var canView = EnsureCanView(task, user);
+        if (canView.IsFailure)
+        {
+            return Result.Failure<TaskDto>(canView.Error);
+        }
 
         if (!user.IsOrgAdmin && task.AssigneeId != user.Id)
         {
-            throw new ForbiddenException("Only the assigned worker can change the status of this task.");
+            return Result.Failure<TaskDto>(Error.Forbidden("Only the assigned worker can change the status of this task."));
         }
 
-        var allowed = Transitions[user.Role];
-        if (!allowed.Contains((task.Status, request.Status)))
+        if (!Transitions.TryGetValue(user.Role, out var allowed) ||
+            !allowed.Contains((task.Status, request.Status)))
         {
-            throw new BadRequestException(
-                $"Transition '{task.Status}' -> '{request.Status}' is not allowed for role '{user.Role}'.");
+            return Result.Failure<TaskDto>(Error.BadRequest(
+                $"Transition '{task.Status}' -> '{request.Status}' is not allowed for role '{user.Role}'."));
         }
 
         task.Status = request.Status;
         task.UpdatedAt = DateTime.UtcNow;
 
         await unitOfWork.SaveChangesAsync(ct);
-        return task.ToDto();
+        return Result.Success(task.ToDto());
     }
 
-    public async Task DeleteAsync(Guid id, CurrentUser user, CancellationToken ct = default)
+    public async Task<Result> DeleteAsync(Guid id, CurrentUser user, CancellationToken ct = default)
     {
-        EnsureOrgAdmin(user);
-        var task = await GetTaskOrThrowAsync(id, ct);
-        EnsureSameOrganization(task, user);
+        var canManage = EnsureOrgAdmin(user);
+        if (canManage.IsFailure)
+        {
+            return canManage;
+        }
+
+        var taskResult = await GetTaskAsync(id, ct);
+        if (taskResult.IsFailure)
+        {
+            return Result.Failure(taskResult.Error);
+        }
+
+        var task = taskResult.Value;
+        var sameOrganization = EnsureSameOrganization(task, user);
+        if (sameOrganization.IsFailure)
+        {
+            return sameOrganization;
+        }
+
         unitOfWork.Tasks.Remove(task);
         await unitOfWork.SaveChangesAsync(ct);
+        return Result.Success();
     }
 
-    public async Task<CommentDto> AddCommentAsync(Guid id, AddCommentRequest request, CurrentUser user, CancellationToken ct = default)
+    public async Task<Result<CommentDto>> AddCommentAsync(Guid id, AddCommentRequest request, CurrentUser user, CancellationToken ct = default)
     {
-        var task = await GetTaskOrThrowAsync(id, ct);
-        EnsureCanView(task, user);
+        var taskResult = await GetTaskAsync(id, ct);
+        if (taskResult.IsFailure)
+        {
+            return Result.Failure<CommentDto>(taskResult.Error);
+        }
 
-        var author = await unitOfWork.Users.GetByIdAsync(user.Id, ct)
-            ?? throw new NotFoundException("Current user was not found.");
+        var task = taskResult.Value;
+        var canView = EnsureCanView(task, user);
+        if (canView.IsFailure)
+        {
+            return Result.Failure<CommentDto>(canView.Error);
+        }
+
+        var author = await unitOfWork.Users.GetByIdAsync(user.Id, ct);
+        if (author is null)
+        {
+            return Result.Failure<CommentDto>(Error.NotFound("Current user was not found."));
+        }
 
         var comment = new TaskComment
         {
@@ -154,57 +271,84 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
         unitOfWork.Comments.Add(comment);
         await unitOfWork.SaveChangesAsync(ct);
 
-        return comment.ToDto();
+        return Result.Success(comment.ToDto());
     }
 
-    private async Task<TaskItem> GetTaskOrThrowAsync(Guid id, CancellationToken ct) =>
-        await unitOfWork.Tasks.GetDetailsAsync(id, ct)
-            ?? throw new NotFoundException($"Task '{id}' was not found.");
+    private async Task<Result<TaskItem>> GetTaskAsync(Guid id, CancellationToken ct)
+    {
+        var task = await unitOfWork.Tasks.GetDetailsAsync(id, ct);
+        return task is null
+            ? Result.Failure<TaskItem>(Error.NotFound($"Task '{id}' was not found."))
+            : Result.Success(task);
+    }
 
-    private static void EnsureOrgAdmin(CurrentUser user)
+    private static Result EnsureOrgAdmin(CurrentUser user)
     {
         if (!user.IsOrgAdmin)
         {
-            throw new ForbiddenException("Only organization administrators can perform this action.");
+            return Result.Failure(Error.Forbidden("Only organization administrators can perform this action."));
         }
+
+        return Result.Success();
     }
 
-    private static void EnsureCanView(TaskItem task, CurrentUser user)
+    private static Result EnsureCanView(TaskItem task, CurrentUser user)
     {
-        EnsureSameOrganization(task, user);
+        var sameOrganization = EnsureSameOrganization(task, user);
+        if (sameOrganization.IsFailure)
+        {
+            return sameOrganization;
+        }
 
         if (!user.IsOrgAdmin && task.AssigneeId != user.Id)
         {
-            throw new ForbiddenException("Workers can only access tasks assigned to them.");
+            return Result.Failure(Error.Forbidden("Workers can only access tasks assigned to them."));
         }
+
+        return Result.Success();
     }
 
-    private async Task EnsureAssigneeIsWorkerAsync(Guid? assigneeId, Guid organizationId, CancellationToken ct)
+    private async Task<Result> EnsureAssigneeIsWorkerAsync(Guid? assigneeId, Guid organizationId, CancellationToken ct)
     {
         if (assigneeId is null)
         {
-            return;
+            return Result.Success();
         }
 
-        var assignee = await unitOfWork.Users.GetByIdAsync(assigneeId.Value, ct)
-            ?? throw new BadRequestException("Selected assignee does not exist.");
+        var assignee = await unitOfWork.Users.GetByIdAsync(assigneeId.Value, ct);
+        if (assignee is null)
+        {
+            return Result.Failure(Error.BadRequest("Selected assignee does not exist."));
+        }
 
         if (assignee.OrganizationId != organizationId || assignee.Role != UserRole.Worker || !assignee.IsActive)
         {
-            throw new BadRequestException("Tasks can only be assigned to active workers in the current organization.");
+            return Result.Failure(Error.BadRequest("Tasks can only be assigned to active workers in the current organization."));
         }
+
+        return Result.Success();
     }
 
-    private static Guid RequireOrganization(CurrentUser user) =>
-        user.OrganizationId ?? throw new ForbiddenException("Current user is not linked to an organization.");
+    private static Result<Guid> RequireOrganization(CurrentUser user) =>
+        user.OrganizationId is Guid organizationId
+            ? Result.Success(organizationId)
+            : Result.Failure<Guid>(Error.Forbidden("Current user is not linked to an organization."));
 
-    private static void EnsureSameOrganization(TaskItem task, CurrentUser user)
+    private static Result EnsureSameOrganization(TaskItem task, CurrentUser user)
     {
-        var organizationId = RequireOrganization(user);
+        var organizationResult = RequireOrganization(user);
+        if (organizationResult.IsFailure)
+        {
+            return Result.Failure(organizationResult.Error);
+        }
+
+        var organizationId = organizationResult.Value;
         if (task.OrganizationId != organizationId)
         {
-            throw new NotFoundException($"Task '{task.Id}' was not found.");
+            return Result.Failure(Error.NotFound($"Task '{task.Id}' was not found."));
         }
+
+        return Result.Success();
     }
 
     private static DateTime? NormalizeUtc(DateTime? value) =>

@@ -13,12 +13,12 @@ public sealed class OrganizationsController(IOrganizationService organizationSer
 {
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<OrganizationDto>>> List(CancellationToken ct) =>
-        Ok(await organizationService.ListAsync(User.ToCurrentUser(), ct));
+        (await organizationService.ListAsync(User.ToCurrentUser(), ct)).ToActionResult(this);
 
     [HttpPut("{id:guid}/access")]
     public async Task<ActionResult<OrganizationDto>> SetAccess(
         Guid id,
         UpdateOrganizationAccessRequest request,
         CancellationToken ct) =>
-        Ok(await organizationService.SetAccessAsync(id, request, User.ToCurrentUser(), ct));
+        (await organizationService.SetAccessAsync(id, request, User.ToCurrentUser(), ct)).ToActionResult(this);
 }

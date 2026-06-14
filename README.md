@@ -50,6 +50,68 @@ flowchart LR
     Payouts -- "Internal API\napply payout" --> Earnings
 ```
 
+## Що вміє застосунок
+
+### Frontend Web
+
+- Авторизація, реєстрація організації та локалізований інтерфейс EN/UA.
+- Окремі робочі простори для Super Admin, Org Admin і Worker.
+- Список завдань із пошуком, фільтрами, статусами, дедлайнами та винагородою.
+- Детальна сторінка завдання з мапою, drag-and-drop редагуванням локації та коментарями.
+- Мапа завдань із маркерами за статусами та фільтрами по датах/користувачах.
+- Статистика задач і історія виплат.
+
+### Core API
+
+- JWT-автентифікація та role-based access control.
+- Автоматичне створення Super Admin під час першого запуску.
+- Управління організаціями, користувачами, завданнями та коментарями.
+- Workflow задач: `Created -> InProgress -> Done -> Verified`.
+- Повернення задачі в роботу адміністратором організації.
+- Outbox-публікація task events у Kafka.
+
+### Gateway
+
+- Єдина точка входу для frontend.
+- Проксіювання `/api` запитів до відповідних backend-сервісів.
+- Дозволяє frontend працювати без hardcoded URL для кожного сервісу.
+
+### Notification Service
+
+- Читає події задач із Kafka.
+- Створює внутрішні сповіщення для користувачів.
+- Підтримує unread count і список сповіщень.
+- Має власну PostgreSQL базу.
+
+### Scheduler Service
+
+- Читає task events із Kafka.
+- Планує нагадування по дедлайнах задач.
+- Зберігає scheduled jobs у MongoDB.
+- Через internal API ініціює reminder-події.
+
+### Earnings Service
+
+- Читає `TaskVerified` події з Kafka.
+- Нараховує винагороду за підтверджені задачі.
+- Веде баланс користувача окремо по валютах `USD` і `UAH`.
+- Надає статистику заробітку, доступного балансу та історію task rewards.
+
+### Payout Service
+
+- Дозволяє Org Admin створювати мок-виплати користувачам.
+- Зберігає payout history та статуси виплат.
+- Списує баланс через internal API Earnings Service.
+- Worker може переглядати власну історію виплат.
+
+### Інфраструктура
+
+- PostgreSQL для core, notifications, earnings і payouts.
+- MongoDB для scheduler jobs.
+- Kafka як event bus між сервісами.
+- Docker Compose для запуску всієї системи однією командою.
+- nginx для віддачі Angular SPA та проксі `/api`.
+
 ## Запуск проєкту
 
 Для запуску потрібен встановлений **Docker** з compose plugin. `make` бажаний, але не обов'язковий.

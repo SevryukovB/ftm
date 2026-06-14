@@ -2,6 +2,7 @@ namespace FieldTaskManager.Domain.Enums;
 
 public enum UserRole
 {
-    Admin = 0,
-    Worker = 1
+    SuperAdmin = 0,
+    OrgAdmin = 1,
+    Worker = 2
 }

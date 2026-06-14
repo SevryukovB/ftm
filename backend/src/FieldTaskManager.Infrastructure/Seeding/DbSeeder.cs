@@ -11,8 +11,8 @@ namespace FieldTaskManager.Infrastructure.Seeding;
 public static class DbSeeder
 {
     /// <summary>
-    /// Creates the database schema (if missing) and seeds the default administrator
-    /// on first start. Self-registered users always get the Worker role.
+    /// Creates the database schema (if missing) and seeds the default super administrator
+    /// on first start. Organization admins are created through organization registration.
     /// </summary>
     public static async Task InitializeAsync(
         AppDbContext context,
@@ -23,19 +23,19 @@ public static class DbSeeder
     {
         await context.Database.EnsureCreatedAsync(ct);
 
-        if (await context.Users.AnyAsync(u => u.Role == UserRole.Admin, ct))
+        if (await context.Users.AnyAsync(u => u.Role == UserRole.SuperAdmin, ct))
         {
             return;
         }
 
-        var email = (configuration["Admin:Email"] ?? "admin@ftm.local").Trim().ToLowerInvariant();
-        var password = configuration["Admin:Password"] ?? "Admin123!";
+        var email = (configuration["SuperAdmin:Email"] ?? configuration["Admin:Email"] ?? "superadmin@ftm.local").Trim().ToLowerInvariant();
+        var password = configuration["SuperAdmin:Password"] ?? configuration["Admin:Password"] ?? "Admin123!";
 
         var admin = new User
         {
             Email = email,
-            FullName = "Administrator",
-            Role = UserRole.Admin
+            FullName = "Super Administrator",
+            Role = UserRole.SuperAdmin
         };
         admin.PasswordHash = passwordHasher.HashPassword(admin, password);
 

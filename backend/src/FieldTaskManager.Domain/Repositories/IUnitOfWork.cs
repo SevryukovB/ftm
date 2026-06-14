@@ -6,6 +6,7 @@ public interface IUnitOfWork
 {
     ITaskRepository Tasks { get; }
     IUserRepository Users { get; }
+    IRepository<Organization> Organizations { get; }
     IRepository<TaskComment> Comments { get; }
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

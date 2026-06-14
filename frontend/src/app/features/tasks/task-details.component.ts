@@ -249,7 +249,7 @@ export class TaskDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   availableTransitions(t: TaskItem): TaskStatus[] {
     const me = this.auth.user();
     if (!me) return [];
-    if (me.role === 'Admin') {
+    if (me.role === 'OrgAdmin') {
       return t.status === 'Done' ? ['Verified', 'InProgress'] : [];
     }
     if (t.assignee?.id !== me.id) return [];

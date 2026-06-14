@@ -18,13 +18,18 @@ public sealed class TokenService(IConfiguration configuration) : ITokenService
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var expiresMinutes = int.TryParse(configuration["Jwt:ExpiresMinutes"], out var minutes) ? minutes : 480;
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Name, user.FullName),
             new Claim(ClaimTypes.Role, user.Role.ToString())
         };
+
+        if (user.OrganizationId is not null)
+        {
+            claims.Add(new Claim("organization_id", user.OrganizationId.Value.ToString()));
+        }
 
         var token = new JwtSecurityToken(
             issuer: configuration["Jwt:Issuer"],

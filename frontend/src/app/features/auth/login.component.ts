@@ -76,7 +76,7 @@ export class LoginComponent {
     this.loading = true;
     this.error = '';
     this.auth.login(this.email, this.password).subscribe({
-      next: () => this.router.navigate(['/tasks']),
+      next: res => this.router.navigate([res.user.role === 'SuperAdmin' ? '/organizations' : '/tasks']),
       error: err => {
         this.loading = false;
         this.error = this.translate.instant('auth.login.failed');

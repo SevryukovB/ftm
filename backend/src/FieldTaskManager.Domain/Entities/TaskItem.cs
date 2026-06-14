@@ -12,6 +12,9 @@ public class TaskItem
     public DateTime? Deadline { get; set; }
     public FieldTaskStatus Status { get; set; } = FieldTaskStatus.Created;
 
+    public Guid OrganizationId { get; set; }
+    public Organization Organization { get; set; } = null!;
+
     public Guid? AssigneeId { get; set; }
     public User? Assignee { get; set; }
 

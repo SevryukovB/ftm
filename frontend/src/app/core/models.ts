@@ -1,4 +1,4 @@
-export type Role = 'Admin' | 'Worker';
+export type Role = 'SuperAdmin' | 'OrgAdmin' | 'Worker';
 
 export type TaskStatus = 'Created' | 'InProgress' | 'Done' | 'Verified';
 
@@ -7,6 +7,9 @@ export interface User {
   email: string;
   fullName: string;
   role: Role;
+  isActive: boolean;
+  organizationId: string | null;
+  organizationName: string | null;
 }
 
 export interface AuthResponse {

@@ -13,27 +13,39 @@ import { LanguageSelectComponent } from '../../shared/language-select.component'
   template: `
     <div class="shell admin-shell">
       <div class="app-header admin-header">
-        <a class="logo" routerLink="/tasks"><i class="pi pi-map-marker"></i> Field Task Manager</a>
+        <a class="logo" [routerLink]="homeLink()"><i class="pi pi-map-marker"></i> Field Task Manager</a>
         <div class="header-spacer"></div>
         <div class="app-header-actions">
           <app-language-select />
           <span class="user-name">{{ userName() }}</span>
-          <span class="role-pill role-pill-admin">{{ 'roles.Admin' | translate }}</span>
+          <span class="role-pill role-pill-admin">{{ roleKey() | translate }}</span>
           <p-button icon="pi pi-sign-out" severity="secondary" [text]="true" [pTooltip]="'nav.signOut' | translate" (onClick)="logout()" />
         </div>
       </div>
       <div class="app-frame">
         <aside class="app-sidebar admin-sidebar">
-          <div class="sidebar-title">{{ 'roles.Admin' | translate }}</div>
+          <div class="sidebar-title">{{ roleKey() | translate }}</div>
           <nav class="side-nav">
-            <a routerLink="/tasks" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-              <i class="pi pi-list-check"></i>
-              <span>{{ 'nav.tasks' | translate }}</span>
-            </a>
-            <a routerLink="/map" routerLinkActive="active">
-              <i class="pi pi-map"></i>
-              <span>{{ 'nav.map' | translate }}</span>
-            </a>
+            @if (auth.isAdmin()) {
+              <a routerLink="/tasks" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+                <i class="pi pi-list-check"></i>
+                <span>{{ 'nav.tasks' | translate }}</span>
+              </a>
+              <a routerLink="/map" routerLinkActive="active">
+                <i class="pi pi-map"></i>
+                <span>{{ 'nav.map' | translate }}</span>
+              </a>
+              <a routerLink="/users" routerLinkActive="active">
+                <i class="pi pi-users"></i>
+                <span>{{ 'nav.users' | translate }}</span>
+              </a>
+            }
+            @if (auth.isSuperAdmin()) {
+              <a routerLink="/organizations" routerLinkActive="active">
+                <i class="pi pi-building"></i>
+                <span>{{ 'nav.organizations' | translate }}</span>
+              </a>
+            }
           </nav>
         </aside>
         <main class="app-main">
@@ -49,8 +61,10 @@ import { LanguageSelectComponent } from '../../shared/language-select.component'
 })
 export class AdminShellComponent {
   readonly userName = computed(() => this.auth.user()?.fullName ?? '');
+  readonly roleKey = computed(() => `roles.${this.auth.user()?.role ?? 'OrgAdmin'}`);
+  readonly homeLink = computed(() => this.auth.isSuperAdmin() ? '/organizations' : '/tasks');
 
-  constructor(private auth: AuthService) {}
+  constructor(readonly auth: AuthService) {}
 
   logout(): void {
     this.auth.logout();

@@ -13,7 +13,7 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
 {
     // Allowed status transitions per role.
     // Worker (assignee only): Created -> InProgress -> Done.
-    // Admin: Done -> Verified (approve) or Done -> InProgress (return to work).
+    // OrgAdmin: Done -> Verified (approve) or Done -> InProgress (return to work).
     private static readonly Dictionary<UserRole, (FieldTaskStatus From, FieldTaskStatus To)[]> Transitions = new()
     {
         [UserRole.Worker] =
@@ -21,7 +21,7 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
             (FieldTaskStatus.Created, FieldTaskStatus.InProgress),
             (FieldTaskStatus.InProgress, FieldTaskStatus.Done)
         ],
-        [UserRole.Admin] =
+        [UserRole.OrgAdmin] =
         [
             (FieldTaskStatus.Done, FieldTaskStatus.Verified),
             (FieldTaskStatus.Done, FieldTaskStatus.InProgress)
@@ -30,9 +30,9 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
 
     public async Task<IReadOnlyList<TaskDto>> SearchAsync(TaskFilter filter, CurrentUser user, CancellationToken ct = default)
     {
-        // Workers can only ever see their own tasks regardless of the requested filter.
-        var effectiveFilter = user.IsAdmin ? filter : filter with { AssigneeId = user.Id };
-        var tasks = await unitOfWork.Tasks.SearchAsync(effectiveFilter, ct);
+        var organizationId = RequireOrganization(user);
+        var effectiveFilter = user.IsOrgAdmin ? filter : filter with { AssigneeId = user.Id };
+        var tasks = await unitOfWork.Tasks.SearchAsync(organizationId, effectiveFilter, ct);
         return tasks.Select(t => t.ToDto()).ToList();
     }
 
@@ -45,8 +45,9 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
 
     public async Task<TaskDto> CreateAsync(CreateTaskRequest request, CurrentUser user, CancellationToken ct = default)
     {
-        EnsureAdmin(user);
-        await EnsureAssigneeIsWorkerAsync(request.AssigneeId, ct);
+        EnsureOrgAdmin(user);
+        var organizationId = RequireOrganization(user);
+        await EnsureAssigneeIsWorkerAsync(request.AssigneeId, organizationId, ct);
 
         var task = new TaskItem
         {
@@ -54,6 +55,7 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
             Description = request.Description?.Trim() ?? string.Empty,
             Latitude = request.Latitude,
             Longitude = request.Longitude,
+            OrganizationId = organizationId,
             AssigneeId = request.AssigneeId,
             Deadline = NormalizeUtc(request.Deadline),
             CreatedById = user.Id
@@ -67,10 +69,12 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
 
     public async Task<TaskDto> UpdateAsync(Guid id, UpdateTaskRequest request, CurrentUser user, CancellationToken ct = default)
     {
-        EnsureAdmin(user);
-        await EnsureAssigneeIsWorkerAsync(request.AssigneeId, ct);
+        EnsureOrgAdmin(user);
+        var organizationId = RequireOrganization(user);
+        await EnsureAssigneeIsWorkerAsync(request.AssigneeId, organizationId, ct);
 
         var task = await GetTaskOrThrowAsync(id, ct);
+        EnsureSameOrganization(task, user);
 
         task.Title = request.Title.Trim();
         task.Description = request.Description?.Trim() ?? string.Empty;
@@ -86,9 +90,10 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
 
     public async Task<TaskDto> UpdateLocationAsync(Guid id, UpdateLocationRequest request, CurrentUser user, CancellationToken ct = default)
     {
-        EnsureAdmin(user);
+        EnsureOrgAdmin(user);
 
         var task = await GetTaskOrThrowAsync(id, ct);
+        EnsureSameOrganization(task, user);
         task.Latitude = request.Latitude;
         task.Longitude = request.Longitude;
         task.UpdatedAt = DateTime.UtcNow;
@@ -102,7 +107,7 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
         var task = await GetTaskOrThrowAsync(id, ct);
         EnsureCanView(task, user);
 
-        if (!user.IsAdmin && task.AssigneeId != user.Id)
+        if (!user.IsOrgAdmin && task.AssigneeId != user.Id)
         {
             throw new ForbiddenException("Only the assigned worker can change the status of this task.");
         }
@@ -123,8 +128,9 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
 
     public async Task DeleteAsync(Guid id, CurrentUser user, CancellationToken ct = default)
     {
-        EnsureAdmin(user);
+        EnsureOrgAdmin(user);
         var task = await GetTaskOrThrowAsync(id, ct);
+        EnsureSameOrganization(task, user);
         unitOfWork.Tasks.Remove(task);
         await unitOfWork.SaveChangesAsync(ct);
     }
@@ -155,23 +161,25 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
         await unitOfWork.Tasks.GetDetailsAsync(id, ct)
             ?? throw new NotFoundException($"Task '{id}' was not found.");
 
-    private static void EnsureAdmin(CurrentUser user)
+    private static void EnsureOrgAdmin(CurrentUser user)
     {
-        if (!user.IsAdmin)
+        if (!user.IsOrgAdmin)
         {
-            throw new ForbiddenException("Only administrators can perform this action.");
+            throw new ForbiddenException("Only organization administrators can perform this action.");
         }
     }
 
     private static void EnsureCanView(TaskItem task, CurrentUser user)
     {
-        if (!user.IsAdmin && task.AssigneeId != user.Id)
+        EnsureSameOrganization(task, user);
+
+        if (!user.IsOrgAdmin && task.AssigneeId != user.Id)
         {
             throw new ForbiddenException("Workers can only access tasks assigned to them.");
         }
     }
 
-    private async Task EnsureAssigneeIsWorkerAsync(Guid? assigneeId, CancellationToken ct)
+    private async Task EnsureAssigneeIsWorkerAsync(Guid? assigneeId, Guid organizationId, CancellationToken ct)
     {
         if (assigneeId is null)
         {
@@ -181,9 +189,21 @@ public sealed class TaskService(IUnitOfWork unitOfWork) : ITaskService
         var assignee = await unitOfWork.Users.GetByIdAsync(assigneeId.Value, ct)
             ?? throw new BadRequestException("Selected assignee does not exist.");
 
-        if (assignee.Role != UserRole.Worker)
+        if (assignee.OrganizationId != organizationId || assignee.Role != UserRole.Worker || !assignee.IsActive)
         {
-            throw new BadRequestException("Tasks can only be assigned to users with the Worker role.");
+            throw new BadRequestException("Tasks can only be assigned to active workers in the current organization.");
+        }
+    }
+
+    private static Guid RequireOrganization(CurrentUser user) =>
+        user.OrganizationId ?? throw new ForbiddenException("Current user is not linked to an organization.");
+
+    private static void EnsureSameOrganization(TaskItem task, CurrentUser user)
+    {
+        var organizationId = RequireOrganization(user);
+        if (task.OrganizationId != organizationId)
+        {
+            throw new NotFoundException($"Task '{task.Id}' was not found.");
         }
     }
 

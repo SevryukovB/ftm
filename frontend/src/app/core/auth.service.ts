@@ -2,7 +2,7 @@ import { Injectable, computed, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
-import { AuthResponse, User } from './models';
+import { AuthResponse, Role, User } from './models';
 
 const TOKEN_KEY = 'ftm_token';
 const USER_KEY = 'ftm_user';
@@ -12,7 +12,8 @@ export class AuthService {
   private readonly userSignal = signal<User | null>(readStoredUser());
 
   readonly user = computed(() => this.userSignal());
-  readonly isAdmin = computed(() => this.userSignal()?.role === 'Admin');
+  readonly isAdmin = computed(() => this.userSignal()?.role === 'OrgAdmin');
+  readonly isSuperAdmin = computed(() => this.userSignal()?.role === 'SuperAdmin');
 
   constructor(private http: HttpClient, private router: Router) {}
 
@@ -30,17 +31,21 @@ export class AuthService {
       .pipe(tap(res => this.store(res)));
   }
 
-  register(fullName: string, email: string, password: string): Observable<AuthResponse> {
+  register(fullName: string, email: string, organizationName: string, password: string): Observable<AuthResponse> {
     return this.http
-      .post<AuthResponse>('/api/auth/register', { fullName, email, password })
+      .post<AuthResponse>('/api/auth/register', { fullName, email, organizationName, password })
       .pipe(tap(res => this.store(res)));
   }
 
   logout(): void {
+    this.clearSession();
+    this.router.navigate(['/login']);
+  }
+
+  clearSession(): void {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     this.userSignal.set(null);
-    this.router.navigate(['/login']);
   }
 
   private store(res: AuthResponse): void {
@@ -53,8 +58,25 @@ export class AuthService {
 function readStoredUser(): User | null {
   try {
     const raw = localStorage.getItem(USER_KEY);
-    return raw ? (JSON.parse(raw) as User) : null;
+    if (!raw) {
+      return null;
+    }
+
+    const user = JSON.parse(raw) as User;
+    if (!isKnownRole(user.role)) {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+      return null;
+    }
+
+    return user;
   } catch {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
     return null;
   }
+}
+
+function isKnownRole(role: Role | string | null | undefined): role is Role {
+  return role === 'SuperAdmin' || role === 'OrgAdmin' || role === 'Worker';
 }

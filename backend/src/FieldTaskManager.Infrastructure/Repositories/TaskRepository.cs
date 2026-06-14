@@ -15,12 +15,13 @@ public sealed class TaskRepository(AppDbContext context) : Repository<TaskItem>(
                 .ThenInclude(c => c.Author)
             .FirstOrDefaultAsync(t => t.Id == id, ct);
 
-    public async Task<IReadOnlyList<TaskItem>> SearchAsync(TaskFilter filter, CancellationToken ct = default)
+    public async Task<IReadOnlyList<TaskItem>> SearchAsync(Guid organizationId, TaskFilter filter, CancellationToken ct = default)
     {
         var query = Set
             .AsNoTracking()
             .Include(t => t.Assignee)
             .Include(t => t.CreatedBy)
+            .Where(t => t.OrganizationId == organizationId)
             .AsQueryable();
 
         if (filter.Status is not null)

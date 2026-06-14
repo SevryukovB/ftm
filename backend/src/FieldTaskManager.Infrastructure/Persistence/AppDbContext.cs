@@ -5,12 +5,21 @@ namespace FieldTaskManager.Infrastructure.Persistence;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
+    public DbSet<Organization> Organizations => Set<Organization>();
     public DbSet<User> Users => Set<User>();
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
     public DbSet<TaskComment> Comments => Set<TaskComment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Organization>(builder =>
+        {
+            builder.ToTable("organizations");
+            builder.HasKey(o => o.Id);
+            builder.Property(o => o.Name).IsRequired().HasMaxLength(160);
+            builder.HasIndex(o => o.Name);
+        });
+
         modelBuilder.Entity<User>(builder =>
         {
             builder.ToTable("users");
@@ -20,6 +29,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             builder.Property(u => u.FullName).IsRequired().HasMaxLength(128);
             builder.Property(u => u.PasswordHash).IsRequired();
             builder.Property(u => u.Role).HasConversion<string>().HasMaxLength(16);
+            builder.HasIndex(u => u.OrganizationId);
+
+            builder.HasOne(u => u.Organization)
+                .WithMany(o => o.Users)
+                .HasForeignKey(u => u.OrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<TaskItem>(builder =>
@@ -29,8 +44,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             builder.Property(t => t.Title).IsRequired().HasMaxLength(200);
             builder.Property(t => t.Description).HasMaxLength(4000);
             builder.Property(t => t.Status).HasConversion<string>().HasMaxLength(16);
+            builder.HasIndex(t => t.OrganizationId);
             builder.HasIndex(t => t.Status);
             builder.HasIndex(t => t.AssigneeId);
+
+            builder.HasOne(t => t.Organization)
+                .WithMany(o => o.Tasks)
+                .HasForeignKey(t => t.OrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(t => t.Assignee)
                 .WithMany(u => u.AssignedTasks)

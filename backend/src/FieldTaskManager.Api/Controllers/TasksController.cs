@@ -26,7 +26,7 @@ public sealed class TasksController(ITaskService taskService) : ControllerBase
         Ok(await taskService.GetAsync(id, User.ToCurrentUser(), ct));
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "OrgAdmin")]
     public async Task<ActionResult<TaskDto>> Create(CreateTaskRequest request, CancellationToken ct)
     {
         var task = await taskService.CreateAsync(request, User.ToCurrentUser(), ct);
@@ -34,12 +34,12 @@ public sealed class TasksController(ITaskService taskService) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "OrgAdmin")]
     public async Task<ActionResult<TaskDto>> Update(Guid id, UpdateTaskRequest request, CancellationToken ct) =>
         Ok(await taskService.UpdateAsync(id, request, User.ToCurrentUser(), ct));
 
     [HttpPut("{id:guid}/location")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "OrgAdmin")]
     public async Task<ActionResult<TaskDto>> UpdateLocation(Guid id, UpdateLocationRequest request, CancellationToken ct) =>
         Ok(await taskService.UpdateLocationAsync(id, request, User.ToCurrentUser(), ct));
 
@@ -48,7 +48,7 @@ public sealed class TasksController(ITaskService taskService) : ControllerBase
         Ok(await taskService.ChangeStatusAsync(id, request, User.ToCurrentUser(), ct));
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "OrgAdmin")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await taskService.DeleteAsync(id, User.ToCurrentUser(), ct);

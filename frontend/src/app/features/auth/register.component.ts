@@ -34,6 +34,10 @@ import { LanguageSelectComponent } from '../../shared/language-select.component'
           <input pInputText id="fullName" [(ngModel)]="fullName" [placeholder]="'auth.fullNamePlaceholder' | translate" />
         </div>
         <div class="field">
+          <label for="organizationName">{{ 'auth.organizationName' | translate }}</label>
+          <input pInputText id="organizationName" [(ngModel)]="organizationName" [placeholder]="'auth.organizationPlaceholder' | translate" />
+        </div>
+        <div class="field">
           <label for="email">{{ 'auth.email' | translate }}</label>
           <input pInputText id="email" type="email" [(ngModel)]="email" [placeholder]="'auth.emailPlaceholder' | translate" />
         </div>
@@ -66,6 +70,7 @@ import { LanguageSelectComponent } from '../../shared/language-select.component'
 })
 export class RegisterComponent {
   fullName = '';
+  organizationName = '';
   email = '';
   password = '';
   loading = false;
@@ -74,14 +79,14 @@ export class RegisterComponent {
   constructor(private auth: AuthService, private router: Router, private translate: TranslateService) {}
 
   submit(): void {
-    if (!this.fullName || !this.email || this.password.length < 6) {
+    if (!this.fullName || !this.organizationName || !this.email || this.password.length < 6) {
       this.error = this.translate.instant('auth.register.validation');
       return;
     }
     this.loading = true;
     this.error = '';
-    this.auth.register(this.fullName, this.email, this.password).subscribe({
-      next: () => this.router.navigate(['/tasks']),
+    this.auth.register(this.fullName, this.email, this.organizationName, this.password).subscribe({
+      next: res => this.router.navigate([res.user.role === 'SuperAdmin' ? '/organizations' : '/tasks']),
       error: err => {
         this.loading = false;
         this.error = this.translate.instant('auth.register.failed');

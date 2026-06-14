@@ -6,7 +6,22 @@ namespace FieldTaskManager.Application.Mapping;
 public static class DtoMapper
 {
     public static UserDto ToDto(this User user) =>
-        new(user.Id, user.Email, user.FullName, user.Role.ToString());
+        new(
+            user.Id,
+            user.Email,
+            user.FullName,
+            user.Role.ToString(),
+            user.IsActive,
+            user.OrganizationId,
+            user.Organization?.Name);
+
+    public static OrganizationDto ToDto(this Organization organization) =>
+        new(
+            organization.Id,
+            organization.Name,
+            organization.IsActive,
+            organization.CreatedAt,
+            organization.UpdatedAt);
 
     public static CommentDto ToDto(this TaskComment comment) =>
         new(comment.Id, comment.Text, comment.Author.ToDto(), comment.CreatedAt);

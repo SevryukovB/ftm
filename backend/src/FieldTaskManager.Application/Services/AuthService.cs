@@ -23,15 +23,22 @@ public sealed class AuthService(
             throw new ConflictException($"User with email '{email}' already exists.");
         }
 
-        // Everyone who self-registers gets the Worker role by design.
+        var organization = new Organization
+        {
+            Name = request.OrganizationName.Trim()
+        };
+
         var user = new User
         {
             Email = email,
             FullName = request.FullName.Trim(),
-            Role = UserRole.Worker
+            Role = UserRole.OrgAdmin,
+            Organization = organization,
+            OrganizationId = organization.Id
         };
         user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
 
+        unitOfWork.Organizations.Add(organization);
         unitOfWork.Users.Add(user);
         await unitOfWork.SaveChangesAsync(ct);
 
@@ -41,8 +48,13 @@ public sealed class AuthService(
     public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct = default)
     {
         var email = request.Email.Trim().ToLowerInvariant();
-        var user = await unitOfWork.Users.GetByEmailAsync(email, ct)
+        var user = await unitOfWork.Users.GetByEmailWithOrganizationAsync(email, ct)
             ?? throw new UnauthorizedException("Invalid email or password.");
+
+        if (!user.IsActive || user.Organization?.IsActive == false)
+        {
+            throw new UnauthorizedException("User or organization access is disabled.");
+        }
 
         var result = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
         if (result == PasswordVerificationResult.Failed)

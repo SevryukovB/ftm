@@ -6,15 +6,19 @@
     "edit": "Edit",
     "error": "Error",
     "reset": "Reset",
+    "save": "Save",
     "saved": "Saved"
   },
   "nav": {
     "map": "Map",
+    "organizations": "Organizations",
     "signOut": "Sign out",
-    "tasks": "Tasks"
+    "tasks": "Tasks",
+    "users": "Users"
   },
   "roles": {
-    "Admin": "Admin",
+    "SuperAdmin": "Super Admin",
+    "OrgAdmin": "Organization Admin",
     "Worker": "Worker"
   },
   "status": {
@@ -28,13 +32,15 @@
     "emailPlaceholder": "you@example.com",
     "fullName": "Full name",
     "fullNamePlaceholder": "John Field",
+    "organizationName": "Organization name",
+    "organizationPlaceholder": "Field Operations LLC",
     "password": "Password",
     "passwordMin": "Password (min 6 characters)",
     "login": {
       "action": "Sign in",
       "failed": "Sign in failed. Check your credentials.",
       "noAccount": "No account yet?",
-      "registerLink": "Register as a worker",
+      "registerLink": "Register an organization",
       "subtitle": "Sign in to continue",
       "validation": "Enter your email and password."
     },
@@ -43,7 +49,7 @@
       "alreadyRegistered": "Already registered?",
       "failed": "Registration failed.",
       "signInLink": "Sign in",
-      "subtitle": "New accounts get the Worker role",
+      "subtitle": "Create an organization and become its admin",
       "title": "Create account",
       "validation": "Fill in all fields. Password must be at least 6 characters."
     }
@@ -122,5 +128,27 @@
   "map": {
     "allStatuses": "All statuses",
     "openTask": "Open task"
+  },
+  "users": {
+    "active": "Active",
+    "deactivateFailed": "Failed to deactivate user",
+    "empty": "No users found.",
+    "inactive": "Inactive",
+    "loadFailed": "Failed to load users",
+    "newUser": "New User",
+    "role": "Role",
+    "saveFailed": "Failed to save user",
+    "status": "Status",
+    "title": "Users",
+    "validation": "Fill in required fields. New users need a valid email and password with at least 6 characters."
+  },
+  "organizations": {
+    "disable": "Disable",
+    "empty": "No organizations found.",
+    "enable": "Enable",
+    "loadFailed": "Failed to load organizations",
+    "name": "Name",
+    "saveFailed": "Failed to update organization access",
+    "title": "Organizations"
   }
 }

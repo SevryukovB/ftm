@@ -15,3 +15,24 @@
          ╵             [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
 
 [39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/statistics/statistics.component"[0m
+
+    src/app/app.routes.ts:15:36:
+[37m      15 │ ...ticsComponent } from [32m'./features/statistics/statistics.component'[37m;
+         ╵                         [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/statistics/statistics.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:16:36:
+[37m      16 │ ...ticsComponent } from [32m'./features/statistics/statistics.component'[37m;
+         ╵                         [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'list' does not exist on type 'PayoutService'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/payout-history/payout-history.component.ts:238:28:
+[37m      238 │       payouts: this.payouts.[32mlist[37m()
+          ╵                             [32m~~~~[0m
+
+[39m[22m

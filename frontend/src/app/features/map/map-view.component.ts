@@ -9,8 +9,9 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
 import * as L from 'leaflet';
 
+import { AuthService } from '../../core/auth.service';
 import { TaskService } from '../../core/task.service';
-import { STATUS_LIST, STATUS_META, TaskItem, TaskStatus } from '../../core/models';
+import { STATUS_LIST, STATUS_META, TaskItem, TaskStatus, User } from '../../core/models';
 import { DEFAULT_CENTER, DEFAULT_ZOOM, createTileLayer, statusIcon } from '../../core/map-utils';
 
 @Component({
@@ -28,6 +29,14 @@ import { DEFAULT_CENTER, DEFAULT_ZOOM, createTileLayer, statusIcon } from '../..
                     optionLabel="label" optionValue="value"
                     [placeholder]="'map.allStatuses' | translate" [showClear]="true"
                     styleClass="filter-select" />
+          @if (auth.isAdmin()) {
+            <p-select [options]="workerOptions()"
+                      [ngModel]="assigneeId()"
+                      (ngModelChange)="assigneeId.set($event); loadTasks()"
+                      optionLabel="label" optionValue="value"
+                      [placeholder]="'map.allUsers' | translate" [showClear]="true" [filter]="true"
+                      styleClass="filter-select user-filter" />
+          }
           <div class="date-filters" [attr.aria-label]="'map.updatedRange' | translate">
             <label>
               <span>{{ 'map.updatedFrom' | translate }}</span>
@@ -42,9 +51,9 @@ import { DEFAULT_CENTER, DEFAULT_ZOOM, createTileLayer, statusIcon } from '../..
               severity="secondary"
               [text]="true"
               [rounded]="true"
-              [pTooltip]="'map.clearDates' | translate"
-              (onClick)="clearDateFilters()"
-              [disabled]="!updatedFrom && !updatedTo" />
+              [pTooltip]="'map.clearFilters' | translate"
+              (onClick)="clearFilters()"
+              [disabled]="!status() && !assigneeId() && !updatedFrom && !updatedTo" />
           </div>
         </div>
       </div>
@@ -125,15 +134,20 @@ import { DEFAULT_CENTER, DEFAULT_ZOOM, createTileLayer, statusIcon } from '../..
   `]
 })
 export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
+  readonly auth = inject(AuthService);
   private readonly taskService = inject(TaskService);
   private readonly messages = inject(MessageService);
   private readonly translate = inject(TranslateService);
 
   readonly status = signal<TaskStatus | null>(null);
+  readonly assigneeId = signal<string | null>(null);
+  readonly workers = signal<User[]>([]);
   updatedFrom = '';
   updatedTo = '';
   readonly statusList = STATUS_LIST;
   readonly meta = STATUS_META;
+  readonly workerOptions = computed(() =>
+    this.workers().map(w => ({ label: `${w.fullName} (${w.email})`, value: w.id })));
   readonly statusOptions = computed(() => {
     this.translate.currentLang();
     return STATUS_LIST.map(s => ({ label: this.statusLabel(s), value: s }));
@@ -147,6 +161,12 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
     this.langSub = this.translate.onLangChange.subscribe(() => this.render());
     this.loadTasks();
+    if (this.auth.isAdmin()) {
+      this.taskService.workers().subscribe({
+        next: workers => this.workers.set(workers),
+        error: () => {}
+      });
+    }
   }
 
   ngAfterViewInit(): void {
@@ -165,6 +185,7 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   loadTasks(): void {
     this.taskService.list({
+      assigneeId: this.auth.isAdmin() ? this.assigneeId() : null,
       updatedFrom: this.toDateTimeQuery(this.updatedFrom, false),
       updatedTo: this.toDateTimeQuery(this.updatedTo, true)
     }).subscribe({
@@ -177,7 +198,9 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  clearDateFilters(): void {
+  clearFilters(): void {
+    this.status.set(null);
+    this.assigneeId.set(null);
     this.updatedFrom = '';
     this.updatedTo = '';
     this.loadTasks();

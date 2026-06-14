@@ -154,6 +154,8 @@
   "map": {
     "allStatuses": "All statuses",
     "clearDates": "Clear date range",
+    "clearFilters": "Clear filters",
+    "allUsers": "All users",
     "openTask": "Open task",
     "updatedFrom": "Updated from",
     "updatedRange": "Updated date range",
@@ -182,12 +184,16 @@
     "balanceTooltip": "Current earned balance"
   },
   "statistics": {
+    "allUsers": "All users",
+    "clearFilters": "Clear filters",
     "empty": "No tasks yet.",
     "loadFailed": "Failed to load task statistics",
+    "searchPlaceholder": "Search task title / description",
     "subtitle": "Task totals and direct links to every task in the organization",
     "task": "Task",
     "title": "Statistics",
-    "totalTasks": "Total tasks"
+    "totalTasks": "Total tasks",
+    "updatedRange": "Updated date range"
   },
   "payoutHistory": {
     "balanceUah": "UAH balance",
